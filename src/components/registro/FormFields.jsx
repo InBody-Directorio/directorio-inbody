@@ -1,13 +1,18 @@
-import { useState } from 'react';
-
 export function FormField({ label, required, error, hint, children }) {
   return (
     <div>
       {label && (
-        <label className="block text-xs font-medium text-neutral-700 mb-1.5">
-          {label}
-          {required && <span className="text-inbody-red ml-1">*</span>}
-        </label>
+        <div className="flex items-center justify-between mb-1.5">
+          <label className="text-xs font-medium text-neutral-700">
+            {label}
+            {required && <span className="text-inbody-red ml-1">*</span>}
+          </label>
+          {!required && (
+            <span className="text-[10px] uppercase tracking-wider text-neutral-400 font-medium">
+              Opcional
+            </span>
+          )}
+        </div>
       )}
       {children}
       {error && (
@@ -106,7 +111,6 @@ export function Select({ value, onChange, options, placeholder, error }) {
 
 export function PhoneInput({ value, onChange, placeholder = '55 1234 5678', error }) {
   function handleChange(rawValue) {
-    // Solo dígitos
     const clean = rawValue.replace(/\D/g, '').slice(0, 10);
     onChange(clean);
   }
