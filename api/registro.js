@@ -134,12 +134,17 @@ export default async function handler(req, res) {
     // === Enviar correos ===
     const resend = new Resend(process.env.RESEND_API_KEY);
 
+    // Construir URL del panel admin (auto-detecta host del deploy)
+    const host = req.headers['x-forwarded-host'] || req.headers.host || 'directorio-inbody.vercel.app';
+    const protocol = req.headers['x-forwarded-proto'] || 'https';
+    const adminUrl = `${protocol}://${host}/inbody-admin/pendientes`;
+
     try {
       await resend.emails.send({
         from: FROM_EMAIL,
         to: TO_EMAIL_TEAM,
-        subject: 'Nueva solicitud de registro · Directorio InBody',
-        html: renderTeamEmail(data),
+        subject: `Nueva solicitud: ${data.nombre} · Directorio InBody`,
+        html: renderTeamEmail({ ...data, admin_url: adminUrl, profesional_id: profesional.id }),
       });
 
       await resend.emails.send({
@@ -214,12 +219,20 @@ function renderTeamEmail(data) {
       ${data.foto_equipo_url ? `<td style="width:50%;padding-left:8px;"><img src="${data.foto_equipo_url}" style="width:100%;border-radius:8px;display:block;"/><div style="font-size:11px;color:#5c5c60;text-align:center;margin-top:6px;">Foto del equipo InBody</div></td>` : ''}
     </tr></table>
   </div>` : ''}
-  <p style="margin:24px 0 0;font-size:12px;color:#8a8a8f;line-height:1.6;">
-    La solicitud quedó registrada con estado <strong>pendiente</strong>. Para aprobarla o rechazarla, accedan al panel administrativo.
+  <p style="margin:24px 0 16px;font-size:12px;color:#8a8a8f;line-height:1.6;">
+    La solicitud quedó registrada con estado <strong>pendiente</strong>. Da clic para revisarla en el panel:
   </p>
+  <div style="text-align:center;margin:0 0 8px;">
+    <a href="${data.admin_url || 'https://directorio-inbody.vercel.app/inbody-admin/pendientes'}" style="display:inline-block;background:#E31937;color:white;font-size:14px;font-weight:600;padding:14px 32px;border-radius:99px;text-decoration:none;">
+      Revisar solicitud en el panel →
+    </a>
+  </div>
+  <div style="text-align:center;margin-bottom:8px;font-size:11px;color:#8a8a8f;">
+    o copia esta URL: <a href="${data.admin_url || 'https://directorio-inbody.vercel.app/inbody-admin/pendientes'}" style="color:#E31937;text-decoration:none;word-break:break-all;">${data.admin_url || 'https://directorio-inbody.vercel.app/inbody-admin/pendientes'}</a>
+  </div>
 </td></tr>
 <tr><td style="background:#fafaf7;padding:16px 32px;text-align:center;border-top:1px solid #ececea;">
-  <div style="font-size:11px;color:#8a8a8f;">Directorio InBody México</div>
+  <div style="font-size:11px;color:#8a8a8f;">Directorio InBody México · Panel administrativo</div>
 </td></tr>
 </table></td></tr></table></body></html>`;
 }

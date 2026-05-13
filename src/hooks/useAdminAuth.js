@@ -1,15 +1,21 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '../lib/supabase.js';
 
 /**
  * Hook que maneja el estado de auth del admin.
  * Verifica que el usuario esté autenticado Y esté en la tabla admins.
+ *
+ * Fix v2: Manejo correcto del loading state en refresh.
+ * - Loading=true SOLO durante la verificación inicial
+ * - El listener de onAuthStateChange NO toca loading después del init
+ * - Timeout de seguridad: si después de 8s seguimos en loading, forzamos loading=false
  */
 export function useAdminAuth() {
   const [user, setUser] = useState(null);
   const [admin, setAdmin] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const initialized = useRef(false);
 
   const checkAdmin = useCallback(async function (currentUser) {
     if (!currentUser) {
@@ -26,7 +32,6 @@ export function useAdminAuth() {
 
       if (dbErr) throw dbErr;
       if (!data) {
-        // Usuario auth válido pero NO está en tabla admins → cerrar sesión
         await supabase.auth.signOut();
         setAdmin(null);
         setUser(null);
@@ -53,21 +58,42 @@ export function useAdminAuth() {
   useEffect(function () {
     let mounted = true;
 
-    async function init() {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!mounted) return;
-
-      if (session && session.user) {
-        setUser(session.user);
-        await checkAdmin(session.user);
+    // Timeout de seguridad: si después de 8s seguimos en loading, asumimos sin sesión
+    const safetyTimeout = setTimeout(function () {
+      if (mounted && !initialized.current) {
+        console.warn('Auth check timeout, asumiendo sin sesión');
+        initialized.current = true;
+        setLoading(false);
       }
-      setLoading(false);
+    }, 8000);
+
+    async function init() {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!mounted) return;
+
+        if (session && session.user) {
+          setUser(session.user);
+          await checkAdmin(session.user);
+        }
+      } catch (err) {
+        console.error('Error en init auth:', err);
+      } finally {
+        if (mounted) {
+          initialized.current = true;
+          setLoading(false);
+          clearTimeout(safetyTimeout);
+        }
+      }
     }
 
     init();
 
+    // Listener de cambios: SOLO después del init, no toca loading
     const { data: subscription } = supabase.auth.onAuthStateChange(async function (event, session) {
       if (!mounted) return;
+      if (!initialized.current) return; // ignorar antes del init
+
       if (session && session.user) {
         setUser(session.user);
         await checkAdmin(session.user);
@@ -79,6 +105,7 @@ export function useAdminAuth() {
 
     return function () {
       mounted = false;
+      clearTimeout(safetyTimeout);
       subscription.subscription.unsubscribe();
     };
   }, [checkAdmin]);
