@@ -19,7 +19,7 @@ export default function HowItWorks() {
     {
       num: '03',
       icon: <Activity className="w-5 h-5" />,
-      title: 'Mídete',
+      title: 'Conócete',
       description:
         'Recibe un análisis preciso de tu composición corporal con la tecnología líder a nivel mundial.',
     },

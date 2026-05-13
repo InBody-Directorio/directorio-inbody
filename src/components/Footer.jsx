@@ -9,7 +9,7 @@ export default function Footer() {
       <div className="max-w-6xl mx-auto">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-10 md:gap-12 pb-12 border-b border-white/10">
           <div className="md:col-span-2">
-            <InBodyLogo size={26} className="text-white mb-5" />
+            <InBodyLogo variant="white" size={28} className="mb-5" />
             <p className="text-sm text-neutral-400 leading-relaxed max-w-md mb-6">
               El directorio oficial de profesionales certificados con equipo InBody en México. Encuentra mediciones precisas de composición corporal cerca de ti.
             </p>

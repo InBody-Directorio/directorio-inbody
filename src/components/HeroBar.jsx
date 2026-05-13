@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { MapPin, Activity, Users } from 'lucide-react';
 
-export default function HeroBar({ totalProfesionales, totalEstados, totalEspecialidades }) {
+export default function HeroBar({ totalProfesionales, totalEstados, totalEspecialidades, loading }) {
   return (
     <div className="bg-gradient-to-b from-neutral-50 to-white border-b border-neutral-200/60 px-4 md:px-6 py-4 md:py-6 flex-shrink-0 relative overflow-hidden">
       <div className="absolute inset-0 opacity-[0.025] pointer-events-none" style={{
@@ -30,21 +30,31 @@ export default function HeroBar({ totalProfesionales, totalEstados, totalEspecia
         </p>
 
         <div className="flex flex-wrap items-center gap-2 mt-3">
-          <StatChip
-            icon={<Users className="w-3 h-3" />}
-            value={totalProfesionales}
-            label={'profesional' + (totalProfesionales === 1 ? '' : 'es')}
-          />
-          <StatChip
-            icon={<MapPin className="w-3 h-3" />}
-            value={totalEstados}
-            label={'estado' + (totalEstados === 1 ? '' : 's')}
-          />
-          <StatChip
-            icon={<Activity className="w-3 h-3" />}
-            value={totalEspecialidades}
-            label={'especialidad' + (totalEspecialidades === 1 ? '' : 'es')}
-          />
+          {loading ? (
+            <>
+              <StatChipSkeleton />
+              <StatChipSkeleton />
+              <StatChipSkeleton />
+            </>
+          ) : (
+            <>
+              <StatChip
+                icon={<Users className="w-3 h-3" />}
+                value={totalProfesionales}
+                label={'profesional' + (totalProfesionales === 1 ? '' : 'es')}
+              />
+              <StatChip
+                icon={<MapPin className="w-3 h-3" />}
+                value={totalEstados}
+                label={'estado' + (totalEstados === 1 ? '' : 's')}
+              />
+              <StatChip
+                icon={<Activity className="w-3 h-3" />}
+                value={totalEspecialidades}
+                label={'especialidad' + (totalEspecialidades === 1 ? '' : 'es')}
+              />
+            </>
+          )}
         </div>
       </div>
     </div>
@@ -75,6 +85,15 @@ function StatChip({ icon, value, label }) {
       <span className="text-inbody-red">{icon}</span>
       <span className="font-semibold text-neutral-900 tabular-nums">{displayValue}</span>
       <span className="text-neutral-500">{label}</span>
+    </div>
+  );
+}
+
+function StatChipSkeleton() {
+  return (
+    <div className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-neutral-200/80 rounded-full">
+      <div className="w-3 h-3 rounded-full bg-neutral-200 animate-pulse" />
+      <div className="w-16 h-3 rounded bg-neutral-200 animate-pulse" />
     </div>
   );
 }

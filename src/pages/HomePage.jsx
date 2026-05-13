@@ -10,6 +10,8 @@ import HowItWorks from '../components/HowItWorks.jsx';
 import CtaProfesionales from '../components/CtaProfesionales.jsx';
 import MarcaAutoridad from '../components/MarcaAutoridad.jsx';
 import Footer from '../components/Footer.jsx';
+import ProfesionalModal from '../components/ProfesionalModal.jsx';
+import OnboardingHint from '../components/OnboardingHint.jsx';
 import { useProfesionales } from '../hooks/useProfesionales.js';
 import { useIsMobile } from '../hooks/useIsMobile.js';
 
@@ -23,6 +25,7 @@ export default function HomePage() {
   const [selectedId, setSelectedId] = useState(null);
   const [flyToCoords, setFlyToCoords] = useState(null);
   const [userLocation, setUserLocation] = useState(null);
+  const [modalData, setModalData] = useState(null);
 
   const filtered = useMemo(
     function () {
@@ -44,7 +47,6 @@ export default function HomePage() {
     [profesionales, query, estado, especialidad]
   );
 
-  // Filtros inteligentes: estados disponibles según especialidad activa
   const availableEstados = useMemo(
     function () {
       const set = new Set();
@@ -59,7 +61,6 @@ export default function HomePage() {
     [profesionales, especialidad]
   );
 
-  // Filtros inteligentes: especialidades disponibles según estado activo
   const availableEspecialidades = useMemo(
     function () {
       const set = new Set();
@@ -107,6 +108,23 @@ export default function HomePage() {
     }
   }, []);
 
+  const handleSelectFromList = useCallback(function (prof, ubic) {
+    if (!prof) return;
+    setSelectedId(prof.id);
+    if (ubic && ubic.lat && ubic.lng) {
+      setFlyToCoords({ lat: ubic.lat, lng: ubic.lng });
+    }
+    setModalData({ profesional: prof, ubicacion: ubic });
+  }, []);
+
+  const handleOpenDetails = useCallback(function (prof, ubic) {
+    setModalData({ profesional: prof, ubicacion: ubic });
+  }, []);
+
+  const handleCloseModal = useCallback(function () {
+    setModalData(null);
+  }, []);
+
   const handleLocate = useCallback(function (coords) {
     setUserLocation(coords);
   }, []);
@@ -139,6 +157,7 @@ export default function HomePage() {
         totalProfesionales={stats.totalProfesionales}
         totalEstados={stats.totalEstados}
         totalEspecialidades={stats.totalEspecialidades}
+        loading={loading}
       />
       <FiltrosBar
         query={query}
@@ -158,7 +177,7 @@ export default function HomePage() {
             profesionales={filtered}
             loading={loading}
             selectedId={selectedId}
-            onSelect={handleSelect}
+            onSelect={handleSelectFromList}
           />
         )}
 
@@ -167,6 +186,7 @@ export default function HomePage() {
             profesionales={filtered}
             selectedId={selectedId}
             onSelectProfesional={handleSelect}
+            onOpenDetails={handleOpenDetails}
             flyToCoords={flyToCoords}
             userLocation={userLocation}
           />
@@ -178,7 +198,7 @@ export default function HomePage() {
             profesionales={filtered}
             loading={loading}
             selectedId={selectedId}
-            onSelect={handleSelect}
+            onSelect={handleSelectFromList}
           />
         )}
       </div>
@@ -187,6 +207,16 @@ export default function HomePage() {
       <MarcaAutoridad />
       <CtaProfesionales />
       <Footer />
+
+      {modalData && (
+        <ProfesionalModal
+          profesional={modalData.profesional}
+          ubicacion={modalData.ubicacion}
+          onClose={handleCloseModal}
+        />
+      )}
+
+      {!loading && profesionales.length > 0 && <OnboardingHint />}
     </div>
   );
 }

@@ -6,7 +6,7 @@ export default function Header() {
   return (
     <header className="bg-white/95 backdrop-blur-xl border-b border-neutral-200/60 px-4 md:px-6 h-14 flex items-center justify-between flex-shrink-0 z-30 relative">
       <Link to="/" className="flex items-center gap-3 group">
-        <InBodyLogo size={20} className="text-inbody-red transition-transform group-hover:scale-105" />
+        <InBodyLogo variant="red" size={22} className="transition-transform group-hover:scale-105" />
         <div className="hidden sm:flex items-center gap-3">
           <div className="h-4 w-px bg-neutral-300" />
           <span className="text-[10px] uppercase tracking-[0.16em] text-neutral-500 font-medium">

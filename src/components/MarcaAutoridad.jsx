@@ -1,13 +1,7 @@
-import { Globe2, Award, Building2 } from 'lucide-react';
+import { Building2, Award, Heart, Activity } from 'lucide-react';
 
 export default function MarcaAutoridad() {
   const stats = [
-    {
-      icon: <Globe2 className="w-4 h-4" />,
-      value: '90+',
-      label: 'países',
-      description: 'Presencia global en clínicas, hospitales y centros deportivos.',
-    },
     {
       icon: <Award className="w-4 h-4" />,
       value: '30+',
@@ -18,7 +12,13 @@ export default function MarcaAutoridad() {
       icon: <Building2 className="w-4 h-4" />,
       value: '4,000+',
       label: 'publicaciones',
-      description: 'Validado científicamente en estudios médicos a nivel mundial.',
+      description: 'Validado científicamente en estudios médicos.',
+    },
+    {
+      icon: <Activity className="w-4 h-4" />,
+      value: '#1',
+      label: 'en su categoría',
+      description: 'La tecnología de bioimpedancia de referencia profesional.',
     },
   ];
 
@@ -30,11 +30,11 @@ export default function MarcaAutoridad() {
             La marca
           </div>
           <h2 className="font-display text-3xl md:text-5xl font-light tracking-tight leading-[1.1] text-neutral-900 mb-4">
-            InBody, <em className="italic font-light text-inbody-red">líder mundial</em> <br className="hidden md:block" />
+            InBody, <em className="italic font-light text-inbody-red">referencia profesional</em> <br className="hidden md:block" />
             en composición corporal
           </h2>
           <p className="text-sm md:text-base text-neutral-500 max-w-2xl mx-auto leading-relaxed">
-            La tecnología más confiable y precisa para medir grasa corporal, masa muscular, agua corporal y más. Utilizada por médicos, atletas olímpicos y hospitales a nivel mundial.
+            La tecnología más confiable y precisa para medir grasa corporal, masa muscular, agua corporal y más. Utilizada por médicos, atletas y hospitales en México.
           </p>
         </div>
 
