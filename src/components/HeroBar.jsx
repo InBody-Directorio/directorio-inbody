@@ -3,8 +3,8 @@ import { MapPin, Activity, Users } from 'lucide-react';
 
 export default function HeroBar({ totalProfesionales, totalEstados, totalEspecialidades }) {
   return (
-    <div className="bg-gradient-to-b from-neutral-50 to-white border-b border-neutral-200/60 px-4 md:px-6 py-5 md:py-6 flex-shrink-0 relative overflow-hidden">
-      <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{
+    <div className="bg-gradient-to-b from-neutral-50 to-white border-b border-neutral-200/60 px-4 md:px-6 py-4 md:py-6 flex-shrink-0 relative overflow-hidden">
+      <div className="absolute inset-0 opacity-[0.025] pointer-events-none" style={{
         backgroundImage: 'radial-gradient(circle at 1px 1px, #18181a 1px, transparent 0)',
         backgroundSize: '24px 24px',
       }} />
@@ -22,14 +22,14 @@ export default function HeroBar({ totalProfesionales, totalEstados, totalEspecia
           </div>
         </div>
 
-        <h1 className="font-display text-2xl md:text-4xl font-light tracking-tight leading-[1.05] text-neutral-900 mb-2">
+        <h1 className="font-display text-xl md:text-3xl font-light tracking-tight leading-[1.1] text-neutral-900 mb-1.5 md:mb-2">
           Encuentra tu equipo InBody <em className="italic font-light text-inbody-red">cerca de ti</em>
         </h1>
-        <p className="text-xs md:text-sm text-neutral-500 leading-relaxed max-w-xl mb-4 md:mb-5">
+        <p className="hidden md:block text-sm text-neutral-500 leading-relaxed max-w-xl mb-4 md:mb-5">
           Profesionales certificados con tecnología de composición corporal líder en el mundo.
         </p>
 
-        <div className="flex flex-wrap items-center gap-2 md:gap-3">
+        <div className="flex flex-wrap items-center gap-2 mt-3">
           <StatChip
             icon={<Users className="w-3 h-3" />}
             value={totalProfesionales}

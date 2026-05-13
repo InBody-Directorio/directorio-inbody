@@ -1,5 +1,6 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
+import { MapPinOff } from 'lucide-react';
 import { MAPBOX_TOKEN, MEXICO_CENTER } from '../lib/mapbox.js';
 import { getEspecialidadLabel } from '../config/especialidades.js';
 import { getModeloLabel } from '../config/modelos.js';
@@ -17,14 +18,16 @@ export default function MapaDirectorio({
   const map = useRef(null);
   const markers = useRef({});
   const activePopup = useRef(null);
+  const activeTooltip = useRef(null);
   const userMarker = useRef(null);
+  const [mapReady, setMapReady] = useState(false);
 
   useEffect(function () {
     if (map.current) return;
 
     map.current = new mapboxgl.Map({
       container: mapContainer.current,
-      style: 'mapbox://styles/mapbox/dark-v11',
+      style: 'mapbox://styles/mapbox/light-v11',
       center: [MEXICO_CENTER.lng, MEXICO_CENTER.lat],
       zoom: MEXICO_CENTER.zoom,
       attributionControl: false,
@@ -40,47 +43,91 @@ export default function MapaDirectorio({
       new mapboxgl.AttributionControl({ compact: true }),
       'bottom-right'
     );
+
+    map.current.on('load', function () {
+      // Custom styling: tinte rojo sutil en carreteras
+      try {
+        const layers = map.current.getStyle().layers;
+        layers.forEach(function (layer) {
+          if (layer.id.includes('road-primary') || layer.id.includes('road-secondary')) {
+            try {
+              map.current.setPaintProperty(layer.id, 'line-color', '#f0e0e3');
+            } catch (e) {}
+          }
+          if (layer.id.includes('road-trunk') || layer.id.includes('road-motorway')) {
+            try {
+              map.current.setPaintProperty(layer.id, 'line-color', '#fad8dc');
+            } catch (e) {}
+          }
+        });
+      } catch (e) {
+        console.warn('No se pudo aplicar custom styling:', e);
+      }
+
+      setMapReady(true);
+    });
   }, []);
 
   useEffect(
     function () {
-      if (!map.current) return;
+      if (!map.current || !mapReady) return;
 
-      function setupMarkers() {
-        Object.values(markers.current).forEach(function (m) {
-          m.remove();
-        });
-        markers.current = {};
+      Object.values(markers.current).forEach(function (m) {
+        m.remove();
+      });
+      markers.current = {};
 
-        profesionales.forEach(function (prof) {
-          (prof.ubicaciones || []).forEach(function (ubic) {
-            if (!ubic.lat || !ubic.lng) return;
+      profesionales.forEach(function (prof) {
+        (prof.ubicaciones || []).forEach(function (ubic) {
+          if (!ubic.lat || !ubic.lng) return;
 
-            const el = document.createElement('div');
-            el.className = 'inbody-marker';
-            el.setAttribute('data-prof-id', prof.id);
+          const el = document.createElement('div');
+          el.className = 'inbody-marker';
+          el.setAttribute('data-prof-id', prof.id);
+          el.setAttribute('data-prof-name', prof.nombre);
 
-            el.addEventListener('click', function (e) {
-              e.stopPropagation();
-              onSelectProfesional && onSelectProfesional(prof, ubic);
-            });
-
-            const marker = new mapboxgl.Marker({ element: el })
-              .setLngLat([ubic.lng, ubic.lat])
-              .addTo(map.current);
-
-            markers.current[prof.id + '_' + ubic.id] = marker;
+          el.addEventListener('click', function (e) {
+            e.stopPropagation();
+            onSelectProfesional && onSelectProfesional(prof, ubic);
           });
-        });
-      }
 
-      if (map.current.loaded()) {
-        setupMarkers();
-      } else {
-        map.current.on('load', setupMarkers);
-      }
+          // Tooltip hover
+          el.addEventListener('mouseenter', function () {
+            if (activeTooltip.current) {
+              activeTooltip.current.remove();
+            }
+            const tooltipEl = document.createElement('div');
+            tooltipEl.className = 'inbody-tooltip';
+            tooltipEl.textContent = prof.nombre;
+
+            activeTooltip.current = new mapboxgl.Popup({
+              closeButton: false,
+              closeOnClick: false,
+              offset: 18,
+              className: 'inbody-tooltip-popup',
+              anchor: 'bottom',
+            })
+              .setLngLat([ubic.lng, ubic.lat])
+              .setDOMContent(tooltipEl)
+              .addTo(map.current);
+          });
+
+          el.addEventListener('mouseleave', function () {
+            if (activeTooltip.current) {
+              activeTooltip.current.remove();
+              activeTooltip.current = null;
+            }
+          });
+
+          const marker = new mapboxgl.Marker({ element: el })
+            .setLngLat([ubic.lng, ubic.lat])
+            .addTo(map.current);
+
+          markers.current[prof.id + '_' + ubic.id] = marker;
+        });
+      });
     },
-    [profesionales, onSelectProfesional]
+    [profesionales, mapReady, onSelectProfesional]
   );
 
   useEffect(
@@ -161,6 +208,11 @@ export default function MapaDirectorio({
       if (activePopup.current) {
         activePopup.current.remove();
       }
+      // Quitar tooltip si está activo
+      if (activeTooltip.current) {
+        activeTooltip.current.remove();
+        activeTooltip.current = null;
+      }
 
       const popupHTML = renderPopupHTML(prof, ubic);
 
@@ -182,12 +234,27 @@ export default function MapaDirectorio({
     [selectedId, profesionales, onSelectProfesional]
   );
 
+  const isEmpty = mapReady && profesionales.length === 0;
+
   return (
-    <div
-      ref={mapContainer}
-      className="w-full h-full"
-      style={{ minHeight: '400px' }}
-    />
+    <div className="w-full h-full relative">
+      <div ref={mapContainer} className="w-full h-full" style={{ minHeight: '400px' }} />
+      {isEmpty && (
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+          <div className="bg-white/95 backdrop-blur-xl border border-neutral-200 rounded-2xl px-6 py-5 max-w-xs text-center shadow-xl pointer-events-auto">
+            <div className="w-10 h-10 rounded-full bg-inbody-red-soft mx-auto mb-3 flex items-center justify-center">
+              <MapPinOff className="w-4 h-4 text-inbody-red" />
+            </div>
+            <div className="text-sm font-medium text-neutral-900 mb-1">
+              Sin profesionales
+            </div>
+            <div className="text-xs text-neutral-500 leading-relaxed">
+              No encontramos profesionales con esta combinación de filtros. Prueba con otros.
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
 

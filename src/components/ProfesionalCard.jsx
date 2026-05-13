@@ -29,7 +29,9 @@ export default function ProfesionalCard({ profesional, ubicacion, isSelected, on
               <Activity className="w-6 h-6 text-neutral-400" />
             )}
           </div>
-          <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-green-500 border-2 border-white" />
+          <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-white border border-neutral-200 shadow-sm flex items-center justify-center">
+            <MapPin className="w-2.5 h-2.5 text-inbody-red" fill="currentColor" />
+          </div>
         </div>
 
         <div className="flex-1 min-w-0">

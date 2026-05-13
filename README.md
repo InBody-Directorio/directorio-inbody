@@ -1,80 +1,76 @@
 # Directorio InBody México
 
-Directorio interactivo de profesionales certificados con equipo InBody en México. Stack: Vite + React + Tailwind + Supabase + Mapbox + Vercel.
-
 ## Estado del proyecto
 
 - **Bloque 1: Setup técnico** ✅
 - **Bloque 2: Directorio público** ✅
-- **Bloque 2.5: Upgrade visual (dark mode tech + logo + fotos)** ✅
+- **Bloque 2.5: Refinamiento landing premium** ✅
 - Bloque 3: Formulario de alta (pendiente)
 - Bloque 4: Panel admin (pendiente)
 
 ## Lo nuevo en este push
 
-- Logo InBody real integrado en el header (SVG vector, escala perfecto)
-- HeroBar nuevo con título Fraunces serif + chip "En vivo" + 3 stats animados con count-up
-- Mapa cambiado a **dark mode tech** (estilo Tesla / Vision Pro)
-- Marcadores con glow rojo InBody, pulse animation en seleccionado
-- Botón flotante "Ubícame" abajo a la derecha (pide ubicación al navegador)
-- Marcador azul tipo Apple/Google para la ubicación del usuario con pulse animation
-- Skeleton loaders en sidebar y bottom sheet (en lugar de spinner)
-- Fix del bug del z-index de los dropdowns (ahora usan fixed positioning, ya no se ocultan tras el mapa)
-- Hover en cards más vivo (gradiente sutil, borde izquierdo rojo cuando seleccionado)
-- Dot status verde en cada card indicando "disponible"
-- Status pill "Disponible" en el popup del pin
-- 8 doctores con fotos de Unsplash de demo
+### Bugs corregidos
+- Dropdown de filtros ya no se va hasta abajo (cambiado a `position: absolute` relativo al botón)
+- Logo InBody ya no se ve encimado (viewBox recortado, sin padding raro)
+
+### Cambios de diseño
+- Mapa cambiado a **Light tech custom** (Mapbox Light con tinte rojo sutil en carreteras)
+- Dot verde fake reemplazado por **pin rojo en la foto** del card
+- HeroBar más compacto en mobile (sin descripción)
+
+### Features nuevas
+- **Chips independientes** de filtros activos (`[CDMX X]` separado del dropdown "Estado")
+- **Filtros inteligentes**: opciones sin resultados aparecen grises con badge "Sin datos"
+- **Tooltip al hover** sobre pines del mapa con nombre del profesional
+- **Empty state overlay** cuando no hay resultados, con mensaje claro
+- **Botón Cerrar mejorado** del popup (background semi-transparente para que destaque)
+
+### Bloques nuevos tipo landing
+- **HowItWorks**: 3 pasos visuales (Busca → Contacta → Mídete)
+- **MarcaAutoridad**: stats de InBody como marca (90+ países, 30+ años, 4,000+ publicaciones)
+- **CtaProfesionales**: bloque oscuro con CTA a registro + 3 beneficios
+- **Footer**: completo con redes sociales, contacto, links legales
+
+### Layout
+- Mapa con altura fija 70vh
+- Scroll para acceder a los bloques de landing debajo
+- Layout responsive desktop + móvil
 
 ## Cómo subir este bloque
 
-### Paso 1: Sobrescribir archivos en GitHub
-
 1. Descarga el zip y descomprímelo
-2. GitHub → `InBody-Directorio/directorio-inbody`
+2. Ve a GitHub → `InBody-Directorio/directorio-inbody`
 3. "Add file" → "Upload files"
 4. Arrastra todo el contenido (incluyendo subcarpetas)
 5. Confirma sobrescribir archivos existentes
-6. Commit message: `Bloque 2 visual upgrade: dark mode + logo InBody + fotos demo`
+6. Commit message: `Bloque 2.5 landing premium: light tech + filtros inteligentes + footer`
 7. Commit changes
 
-### Paso 2: Correr SQL para fotos de demo
+Vercel re-deploya solo en 2 min.
 
-Para que los 8 doctores ficticios tengan fotos visibles:
-
-1. Supabase → SQL Editor → New query
-2. Copia el contenido de `supabase/02_seed_fotos.sql`
-3. Pégalo y dale Run
-4. Debe decir Success y mostrarte los 8 registros con foto_perfil_url
-
-### Paso 3: Verificar deploy automático
-
-Vercel re-deploya solo en 2 min. Cuando termine, abre tu URL y debes ver:
-
-- Header con logo InBody real arriba a la izquierda
-- HeroBar con el título "Encuentra tu equipo InBody cerca de ti" y stats animados
-- Filtros que ya no se ocultan tras el mapa
-- Mapa en dark mode con pines rojos brillando
-- 8 doctores con foto en el sidebar
-- Botón circular oscuro flotante abajo a la derecha del mapa
-
-## Estructura del proyecto
+## Estructura
 
 ```
 src/
 ├── components/
-│   ├── BottomSheet.jsx       (skeletons añadidos)
-│   ├── FiltrosBar.jsx        (fix z-index dropdowns)
-│   ├── Header.jsx            (logo InBody real)
-│   ├── HeroBar.jsx           (NUEVO: hero con stats)
-│   ├── InBodyLogo.jsx        (NUEVO: SVG inline)
-│   ├── LocationButton.jsx    (NUEVO: ubícame)
-│   ├── MapaDirectorio.jsx    (DARK MODE)
-│   ├── ProfesionalCard.jsx   (skeleton + status dot)
-│   └── Sidebar.jsx           (skeletons añadidos)
+│   ├── BottomSheet.jsx
+│   ├── CtaProfesionales.jsx     NUEVO
+│   ├── FiltrosBar.jsx            ACTUALIZADO (chips activos + filtros inteligentes)
+│   ├── Footer.jsx                NUEVO
+│   ├── Header.jsx                ACTUALIZADO (logo ajustado)
+│   ├── HeroBar.jsx               ACTUALIZADO (compacto mobile)
+│   ├── HowItWorks.jsx            NUEVO
+│   ├── InBodyLogo.jsx            ACTUALIZADO (viewBox recortado)
+│   ├── LocationButton.jsx
+│   ├── MapaDirectorio.jsx        ACTUALIZADO (light mode + tooltips + empty state)
+│   ├── MarcaAutoridad.jsx        NUEVO
+│   ├── ProfesionalCard.jsx       ACTUALIZADO (pin rojo en vez de dot verde)
+│   └── Sidebar.jsx
 ├── pages/
-│   ├── HomePage.jsx          (integra HeroBar + LocationButton)
-│   ├── RegistroPage.jsx      (Bloque 3)
-│   └── AdminPage.jsx         (Bloque 4)
+│   ├── HomePage.jsx              ACTUALIZADO (layout landing + filtros inteligentes)
+│   ├── RegistroPage.jsx
+│   └── AdminPage.jsx
 ├── hooks/
 ├── lib/
 ├── config/

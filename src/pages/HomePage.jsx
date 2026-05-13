@@ -6,6 +6,10 @@ import FiltrosBar from '../components/FiltrosBar.jsx';
 import Header from '../components/Header.jsx';
 import HeroBar from '../components/HeroBar.jsx';
 import LocationButton from '../components/LocationButton.jsx';
+import HowItWorks from '../components/HowItWorks.jsx';
+import CtaProfesionales from '../components/CtaProfesionales.jsx';
+import MarcaAutoridad from '../components/MarcaAutoridad.jsx';
+import Footer from '../components/Footer.jsx';
 import { useProfesionales } from '../hooks/useProfesionales.js';
 import { useIsMobile } from '../hooks/useIsMobile.js';
 
@@ -38,6 +42,39 @@ export default function HomePage() {
       });
     },
     [profesionales, query, estado, especialidad]
+  );
+
+  // Filtros inteligentes: estados disponibles según especialidad activa
+  const availableEstados = useMemo(
+    function () {
+      const set = new Set();
+      profesionales.forEach(function (prof) {
+        if (especialidad && prof.especialidad !== especialidad) return;
+        (prof.ubicaciones || []).forEach(function (u) {
+          if (u.estado) set.add(u.estado);
+        });
+      });
+      return set;
+    },
+    [profesionales, especialidad]
+  );
+
+  // Filtros inteligentes: especialidades disponibles según estado activo
+  const availableEspecialidades = useMemo(
+    function () {
+      const set = new Set();
+      profesionales.forEach(function (prof) {
+        if (estado) {
+          const matchEstado = (prof.ubicaciones || []).some(function (u) {
+            return u.estado === estado;
+          });
+          if (!matchEstado) return;
+        }
+        set.add(prof.especialidad);
+      });
+      return set;
+    },
+    [profesionales, estado]
   );
 
   const stats = useMemo(
@@ -96,7 +133,7 @@ export default function HomePage() {
   }
 
   return (
-    <div className="flex flex-col h-screen overflow-hidden bg-neutral-50">
+    <div className="bg-neutral-50 min-h-screen">
       <Header />
       <HeroBar
         totalProfesionales={stats.totalProfesionales}
@@ -111,9 +148,11 @@ export default function HomePage() {
         especialidad={especialidad}
         onEspecialidadChange={setEspecialidad}
         resultsCount={filtered.length}
+        availableEstados={availableEstados}
+        availableEspecialidades={availableEspecialidades}
       />
 
-      <div className="flex-1 flex overflow-hidden relative">
+      <div className="flex relative" style={{ height: '70vh', minHeight: '500px' }}>
         {!isMobile && (
           <Sidebar
             profesionales={filtered}
@@ -143,6 +182,11 @@ export default function HomePage() {
           />
         )}
       </div>
+
+      <HowItWorks />
+      <MarcaAutoridad />
+      <CtaProfesionales />
+      <Footer />
     </div>
   );
 }

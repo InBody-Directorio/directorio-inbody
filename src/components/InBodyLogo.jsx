@@ -1,11 +1,12 @@
-export default function InBodyLogo({ className = '', size = 28 }) {
+export default function InBodyLogo({ className = '', size = 24 }) {
   return (
     <svg
-      viewBox="0 0 2403 696"
+      viewBox="332 296 1822 432"
       xmlns="http://www.w3.org/2000/svg"
       className={className}
       style={{ height: size, width: 'auto', display: 'block' }}
       aria-label="InBody"
+      preserveAspectRatio="xMidYMid meet"
     >
       <g transform="matrix(1.3333,0,0,-1.3333,-442.84,968.86)" fill="currentColor">
         <path d="M 2044.99,563.47 C 2015.16,509.15 1985.34,454.84 1955.51,400.52 1925.81,454.84 1896.09,509.15 1866.37,563.47 h -89.4 c 44.77,-81.84 89.56,-163.69 134.33,-245.53 -12.06,-23.23 -31.67,-39.42 -60.15,-39.42 h -23.02 v -73.73 h 39.11 c 23.69,0 45.5,7.74 63.4,20.76 1.76,1.25 3.54,2.6 5.28,4 0.34,0.29 0.7,0.57 1.06,0.84 28.17,23.36 48.98,62.05 48.98,62.05 22.13,52.36 71.68,142.7 121.26,233.03 z" />
