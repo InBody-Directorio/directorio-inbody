@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import { useState } from 'react';
 import { Loader2, RefreshCw } from 'lucide-react';
 import { useAdminAuth } from '../hooks/useAdminAuth.js';
@@ -47,6 +47,7 @@ function AdminApp({ auth }) {
             <Route path="/" element={<Navigate to="/inbody-admin/pendientes" replace />} />
             <Route path="/pendientes" element={
               <ProfesionalesView
+                key="pendientes"
                 status="pendiente"
                 title="Solicitudes pendientes"
                 subtitle="Profesionales esperando revisión."
@@ -55,6 +56,7 @@ function AdminApp({ auth }) {
             } />
             <Route path="/aprobados" element={
               <ProfesionalesView
+                key="aprobados"
                 status="aprobado"
                 title="Profesionales aprobados"
                 subtitle="Visibles en el directorio público."
@@ -63,6 +65,7 @@ function AdminApp({ auth }) {
             } />
             <Route path="/rechazados" element={
               <ProfesionalesView
+                key="rechazados"
                 status="rechazado"
                 title="Solicitudes rechazadas"
                 subtitle="Puedes restaurar a pendiente si fue por error."
