@@ -3,42 +3,88 @@
 @tailwind utilities;
 
 @layer base {
-  html {
+  html, body {
+    @apply antialiased;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    overscroll-behavior: none;
   }
   body {
     @apply bg-neutral-50 text-neutral-900;
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   }
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(0,0,0,0.12);
+    border-radius: 999px;
+  }
+  ::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.22); }
 }
 
-/* Mapbox popup overrides para que combinen con el branding */
-.mapboxgl-popup-content {
-  @apply rounded-2xl shadow-lg p-0 overflow-hidden;
-  border: 1px solid rgba(0, 0, 0, 0.06);
-}
-
-.mapboxgl-popup-close-button {
-  @apply text-2xl pr-2 pt-1 text-neutral-400 hover:text-neutral-900;
-}
-
-.mapboxgl-popup-tip {
-  border-top-color: white !important;
-}
-
-/* Marker custom */
+/* InBody Marker (Airbnb-style) */
 .inbody-marker {
-  width: 28px;
-  height: 28px;
-  background: #e31937;
+  width: 18px;
+  height: 18px;
+  background: #E31937;
   border: 3px solid white;
   border-radius: 50%;
-  box-shadow: 0 2px 8px rgba(227, 25, 55, 0.4);
+  box-shadow: 0 2px 6px rgba(227, 25, 55, 0.35), 0 0 0 1px rgba(0,0,0,0.04);
   cursor: pointer;
-  transition: transform 0.15s ease;
+  transition: transform 0.18s cubic-bezier(0.2, 0.9, 0.3, 1), box-shadow 0.18s ease;
+  will-change: transform;
+}
+.inbody-marker:hover {
+  transform: scale(1.25);
+  box-shadow: 0 4px 12px rgba(227, 25, 55, 0.5), 0 0 0 1px rgba(0,0,0,0.06);
+}
+.inbody-marker.selected {
+  transform: scale(1.35);
+  background: white;
+  border: 4px solid #E31937;
+  box-shadow: 0 6px 16px rgba(227, 25, 55, 0.5);
 }
 
-.inbody-marker:hover {
-  transform: scale(1.15);
+/* Mapbox popup overrides */
+.mapboxgl-popup.inbody-popup .mapboxgl-popup-content {
+  padding: 0;
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.16), 0 0 0 0.5px rgba(0,0,0,0.06);
+  overflow: hidden;
+  border: none;
+}
+.mapboxgl-popup.inbody-popup .mapboxgl-popup-close-button {
+  font-size: 22px;
+  color: rgba(255,255,255,0.92);
+  text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+  padding: 4px 10px;
+  line-height: 1;
+  right: 4px;
+  top: 4px;
+  z-index: 10;
+}
+.mapboxgl-popup.inbody-popup .mapboxgl-popup-close-button:hover {
+  background: transparent;
+  color: white;
+}
+.mapboxgl-popup.inbody-popup .mapboxgl-popup-tip {
+  border-top-color: white !important;
+  border-bottom-color: white !important;
+}
+
+/* Mapbox controls cleaner */
+.mapboxgl-ctrl-group {
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08) !important;
+  border-radius: 10px !important;
+  overflow: hidden;
+  border: 0.5px solid rgba(0,0,0,0.06);
+}
+.mapboxgl-ctrl-group button {
+  width: 32px !important;
+  height: 32px !important;
+}
+.mapboxgl-ctrl-attrib {
+  font-size: 10px;
+  background: rgba(255,255,255,0.7) !important;
+  backdrop-filter: blur(8px);
 }

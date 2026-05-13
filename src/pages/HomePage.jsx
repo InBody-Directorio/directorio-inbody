@@ -1,132 +1,117 @@
-import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { CheckCircle2, XCircle, Loader2, MapPin, Database, Wrench } from 'lucide-react';
-import { supabase } from '../lib/supabase.js';
-import { MAPBOX_TOKEN } from '../lib/mapbox.js';
+import { useState, useMemo, useCallback } from 'react';
+import MapaDirectorio from '../components/MapaDirectorio.jsx';
+import Sidebar from '../components/Sidebar.jsx';
+import BottomSheet from '../components/BottomSheet.jsx';
+import FiltrosBar from '../components/FiltrosBar.jsx';
+import Header from '../components/Header.jsx';
+import { useProfesionales } from '../hooks/useProfesionales.js';
+import { useIsMobile } from '../hooks/useIsMobile.js';
 
 export default function HomePage() {
-  const [supabaseStatus, setSupabaseStatus] = useState('checking');
-  const [mapboxStatus, setMapboxStatus] = useState('checking');
-  const [profesionalesCount, setProfesionalesCount] = useState(null);
+  const { profesionales, loading, error } = useProfesionales();
+  const isMobile = useIsMobile();
 
-  useEffect(() => {
-    checkSupabase();
-    checkMapbox();
-  }, []);
+  const [query, setQuery] = useState('');
+  const [estado, setEstado] = useState(null);
+  const [especialidad, setEspecialidad] = useState(null);
+  const [selectedId, setSelectedId] = useState(null);
+  const [flyToCoords, setFlyToCoords] = useState(null);
 
-  async function checkSupabase() {
-    try {
-      const { count, error } = await supabase
-        .from('profesionales')
-        .select('*', { count: 'exact', head: true });
+  const filtered = useMemo(
+    function () {
+      return profesionales.filter(function (prof) {
+        if (especialidad && prof.especialidad !== especialidad) return false;
 
-      if (error) throw error;
-      setProfesionalesCount(count);
-      setSupabaseStatus('ok');
-    } catch (err) {
-      console.error('Supabase error:', err);
-      setSupabaseStatus('error');
-    }
-  }
+        if (estado) {
+          const matchEstado = (prof.ubicaciones || []).some(function (u) {
+            return u.estado === estado;
+          });
+          if (!matchEstado) return false;
+        }
 
-  async function checkMapbox() {
-    if (!MAPBOX_TOKEN) {
-      setMapboxStatus('error');
+        if (query) {
+          const q = query.toLowerCase();
+          if (!prof.nombre.toLowerCase().includes(q)) return false;
+        }
+
+        return true;
+      });
+    },
+    [profesionales, query, estado, especialidad]
+  );
+
+  const handleSelect = useCallback(function (prof, ubic) {
+    if (!prof) {
+      setSelectedId(null);
       return;
     }
-    try {
-      const res = await fetch(
-        `https://api.mapbox.com/geocoding/v5/mapbox.places/CDMX.json?country=mx&limit=1&access_token=${MAPBOX_TOKEN}`
-      );
-      if (!res.ok) throw new Error('Mapbox no responde');
-      setMapboxStatus('ok');
-    } catch (err) {
-      console.error('Mapbox error:', err);
-      setMapboxStatus('error');
+    setSelectedId(prof.id);
+    if (ubic && ubic.lat && ubic.lng) {
+      setFlyToCoords({ lat: ubic.lat, lng: ubic.lng });
     }
+  }, []);
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-6">
+        <div className="max-w-md text-center">
+          <div className="text-inbody-red text-sm font-medium mb-2">
+            Error al cargar el directorio
+          </div>
+          <div className="text-xs text-neutral-500 mb-4">{error}</div>
+          <button
+            onClick={function () {
+              window.location.reload();
+            }}
+            className="text-xs text-inbody-red hover:underline"
+          >
+            Reintentar
+          </button>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="min-h-screen bg-neutral-50 flex items-center justify-center px-6 py-12">
-      <div className="max-w-xl w-full">
-        <div className="text-center mb-10">
-          <div className="inline-flex items-center gap-2 mb-6">
-            <div className="w-2 h-8 bg-inbody-red rounded-sm" />
-            <span className="text-sm font-medium tracking-wide">Directorio InBody México</span>
-          </div>
-          <h1 className="font-display text-5xl font-light tracking-tight mb-4 leading-tight">
-            Setup técnico <em className="text-inbody-red">en línea</em>
-          </h1>
-          <p className="text-neutral-600 text-base leading-relaxed">
-            Verificando que todos los servicios estén conectados antes de empezar el desarrollo del directorio público.
-          </p>
-        </div>
+    <div className="flex flex-col h-screen overflow-hidden bg-neutral-50">
+      <Header />
+      <FiltrosBar
+        query={query}
+        onQueryChange={setQuery}
+        estado={estado}
+        onEstadoChange={setEstado}
+        especialidad={especialidad}
+        onEspecialidadChange={setEspecialidad}
+        resultsCount={filtered.length}
+      />
 
-        <div className="bg-white rounded-2xl border border-neutral-200 overflow-hidden shadow-sm">
-          <StatusRow
-            icon={<Database className="w-5 h-5" />}
-            label="Supabase (base de datos)"
-            status={supabaseStatus}
-            detail={
-              supabaseStatus === 'ok'
-                ? `Conectado · ${profesionalesCount} profesionales en BD`
-                : supabaseStatus === 'error'
-                ? 'No se pudo conectar. Revisa el SQL del schema.'
-                : 'Verificando...'
-            }
+      <div className="flex-1 flex overflow-hidden relative">
+        {!isMobile && (
+          <Sidebar
+            profesionales={filtered}
+            loading={loading}
+            selectedId={selectedId}
+            onSelect={handleSelect}
           />
-          <StatusRow
-            icon={<MapPin className="w-5 h-5" />}
-            label="Mapbox (API del mapa)"
-            status={mapboxStatus}
-            detail={
-              mapboxStatus === 'ok'
-                ? 'Token válido, geocodificación operativa'
-                : mapboxStatus === 'error'
-                ? 'Token inválido o falta VITE_MAPBOX_TOKEN'
-                : 'Verificando...'
-            }
-            isLast
-          />
-        </div>
-
-        {supabaseStatus === 'ok' && mapboxStatus === 'ok' && (
-          <div className="mt-8 p-5 bg-green-50 border border-green-200 rounded-xl text-center">
-            <p className="text-sm text-green-800 font-medium mb-1">
-              ¡Todo listo! Conexiones activas.
-            </p>
-            <p className="text-xs text-green-700">
-              Avísale a Rodrigo para arrancar con el Bloque 2 (directorio público).
-            </p>
-          </div>
         )}
 
-        <div className="mt-8 flex items-center justify-center gap-3 text-xs text-neutral-400">
-          <Link to="/registro" className="hover:text-neutral-900 transition-colors flex items-center gap-1">
-            <Wrench className="w-3 h-3" /> /registro
-          </Link>
-          <span>·</span>
-          <Link to="/admin" className="hover:text-neutral-900 transition-colors flex items-center gap-1">
-            <Wrench className="w-3 h-3" /> /admin
-          </Link>
-        </div>
-      </div>
-    </div>
-  );
-}
+        <main className="flex-1 relative">
+          <MapaDirectorio
+            profesionales={filtered}
+            selectedId={selectedId}
+            onSelectProfesional={handleSelect}
+            flyToCoords={flyToCoords}
+          />
+        </main>
 
-function StatusRow({ icon, label, status, detail, isLast }) {
-  return (
-    <div className={`flex items-center gap-4 p-5 ${!isLast ? 'border-b border-neutral-150' : ''}`}>
-      <div className="text-neutral-400 flex-shrink-0">{icon}</div>
-      <div className="flex-1 min-w-0">
-        <div className="font-medium text-sm text-neutral-900">{label}</div>
-        <div className="text-xs text-neutral-500 mt-0.5">{detail}</div>
-      </div>
-      <div className="flex-shrink-0">
-        {status === 'checking' && <Loader2 className="w-5 h-5 text-neutral-400 animate-spin" />}
-        {status === 'ok' && <CheckCircle2 className="w-5 h-5 text-green-600" />}
-        {status === 'error' && <XCircle className="w-5 h-5 text-inbody-red" />}
+        {isMobile && (
+          <BottomSheet
+            profesionales={filtered}
+            loading={loading}
+            selectedId={selectedId}
+            onSelect={handleSelect}
+          />
+        )}
       </div>
     </div>
   );
