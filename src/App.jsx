@@ -8,7 +8,7 @@ export default function App() {
     <Routes>
       <Route path="/" element={<HomePage />} />
       <Route path="/registro" element={<RegistroPage />} />
-      <Route path="/admin" element={<AdminPage />} />
+      <Route path="/inbody-admin/*" element={<AdminPage />} />
     </Routes>
   );
 }
