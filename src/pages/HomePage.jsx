@@ -4,6 +4,8 @@ import Sidebar from '../components/Sidebar.jsx';
 import BottomSheet from '../components/BottomSheet.jsx';
 import FiltrosBar from '../components/FiltrosBar.jsx';
 import Header from '../components/Header.jsx';
+import HeroBar from '../components/HeroBar.jsx';
+import LocationButton from '../components/LocationButton.jsx';
 import { useProfesionales } from '../hooks/useProfesionales.js';
 import { useIsMobile } from '../hooks/useIsMobile.js';
 
@@ -16,28 +18,45 @@ export default function HomePage() {
   const [especialidad, setEspecialidad] = useState(null);
   const [selectedId, setSelectedId] = useState(null);
   const [flyToCoords, setFlyToCoords] = useState(null);
+  const [userLocation, setUserLocation] = useState(null);
 
   const filtered = useMemo(
     function () {
       return profesionales.filter(function (prof) {
         if (especialidad && prof.especialidad !== especialidad) return false;
-
         if (estado) {
           const matchEstado = (prof.ubicaciones || []).some(function (u) {
             return u.estado === estado;
           });
           if (!matchEstado) return false;
         }
-
         if (query) {
           const q = query.toLowerCase();
           if (!prof.nombre.toLowerCase().includes(q)) return false;
         }
-
         return true;
       });
     },
     [profesionales, query, estado, especialidad]
+  );
+
+  const stats = useMemo(
+    function () {
+      const estadosUnicos = new Set();
+      const especialidadesUnicas = new Set();
+      profesionales.forEach(function (p) {
+        especialidadesUnicas.add(p.especialidad);
+        (p.ubicaciones || []).forEach(function (u) {
+          estadosUnicos.add(u.estado);
+        });
+      });
+      return {
+        totalProfesionales: profesionales.length,
+        totalEstados: estadosUnicos.size,
+        totalEspecialidades: especialidadesUnicas.size,
+      };
+    },
+    [profesionales]
   );
 
   const handleSelect = useCallback(function (prof, ubic) {
@@ -49,6 +68,10 @@ export default function HomePage() {
     if (ubic && ubic.lat && ubic.lng) {
       setFlyToCoords({ lat: ubic.lat, lng: ubic.lng });
     }
+  }, []);
+
+  const handleLocate = useCallback(function (coords) {
+    setUserLocation(coords);
   }, []);
 
   if (error) {
@@ -75,6 +98,11 @@ export default function HomePage() {
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-neutral-50">
       <Header />
+      <HeroBar
+        totalProfesionales={stats.totalProfesionales}
+        totalEstados={stats.totalEstados}
+        totalEspecialidades={stats.totalEspecialidades}
+      />
       <FiltrosBar
         query={query}
         onQueryChange={setQuery}
@@ -101,7 +129,9 @@ export default function HomePage() {
             selectedId={selectedId}
             onSelectProfesional={handleSelect}
             flyToCoords={flyToCoords}
+            userLocation={userLocation}
           />
+          <LocationButton onLocate={handleLocate} />
         </main>
 
         {isMobile && (

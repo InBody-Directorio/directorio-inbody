@@ -5,78 +5,81 @@ Directorio interactivo de profesionales certificados con equipo InBody en Méxic
 ## Estado del proyecto
 
 - **Bloque 1: Setup técnico** ✅
-- **Bloque 2: Directorio público (mapa + filtros + tarjetas)** ✅
+- **Bloque 2: Directorio público** ✅
+- **Bloque 2.5: Upgrade visual (dark mode tech + logo + fotos)** ✅
 - Bloque 3: Formulario de alta (pendiente)
 - Bloque 4: Panel admin (pendiente)
-- Bloque 5: Pulido + deploy final (pendiente)
 
-## Cómo subir el Bloque 2
+## Lo nuevo en este push
 
-1. Descarga el zip de este bloque y descomprímelo
-2. Ve a GitHub → `InBody-Directorio/directorio-inbody`
-3. Dale clic a "Add file" → "Upload files"
-4. Arrastra todo el contenido de la carpeta (incluyendo subcarpetas como `src`, `supabase`, etc.)
-5. **IMPORTANTE:** GitHub te va a preguntar si quieres sobrescribir los archivos existentes. Dale clic en "Replace" o "Overwrite". Es lo que queremos.
-6. Commit message: `Bloque 2: directorio público con mapa`
+- Logo InBody real integrado en el header (SVG vector, escala perfecto)
+- HeroBar nuevo con título Fraunces serif + chip "En vivo" + 3 stats animados con count-up
+- Mapa cambiado a **dark mode tech** (estilo Tesla / Vision Pro)
+- Marcadores con glow rojo InBody, pulse animation en seleccionado
+- Botón flotante "Ubícame" abajo a la derecha (pide ubicación al navegador)
+- Marcador azul tipo Apple/Google para la ubicación del usuario con pulse animation
+- Skeleton loaders en sidebar y bottom sheet (en lugar de spinner)
+- Fix del bug del z-index de los dropdowns (ahora usan fixed positioning, ya no se ocultan tras el mapa)
+- Hover en cards más vivo (gradiente sutil, borde izquierdo rojo cuando seleccionado)
+- Dot status verde en cada card indicando "disponible"
+- Status pill "Disponible" en el popup del pin
+- 8 doctores con fotos de Unsplash de demo
+
+## Cómo subir este bloque
+
+### Paso 1: Sobrescribir archivos en GitHub
+
+1. Descarga el zip y descomprímelo
+2. GitHub → `InBody-Directorio/directorio-inbody`
+3. "Add file" → "Upload files"
+4. Arrastra todo el contenido (incluyendo subcarpetas)
+5. Confirma sobrescribir archivos existentes
+6. Commit message: `Bloque 2 visual upgrade: dark mode + logo InBody + fotos demo`
 7. Commit changes
 
-Vercel detecta el push automáticamente y re-deploya en 1-2 minutos.
+### Paso 2: Correr SQL para fotos de demo
 
-## Lo que se ve después del deploy
+Para que los 8 doctores ficticios tengan fotos visibles:
 
-Ya no la pantalla de "Setup técnico en línea". Ahora vas a ver:
+1. Supabase → SQL Editor → New query
+2. Copia el contenido de `supabase/02_seed_fotos.sql`
+3. Pégalo y dale Run
+4. Debe decir Success y mostrarte los 8 registros con foto_perfil_url
 
-- **Header sticky** con logo InBody y botón "Registrar mi equipo"
-- **Barra de filtros**: búsqueda por nombre, dropdown Estado, dropdown Especialidad
-- **Sidebar lateral izquierdo** (desktop) o **bottom sheet drag-up** (móvil) con tarjetas de profesionales
-- **Mapa de México** con los 8 doctores ficticios como pines rojos
-- **Popup** al hacer clic en un pin con foto, info, modelo InBody, WhatsApp grande y botones de llamar/cómo llegar
+### Paso 3: Verificar deploy automático
+
+Vercel re-deploya solo en 2 min. Cuando termine, abre tu URL y debes ver:
+
+- Header con logo InBody real arriba a la izquierda
+- HeroBar con el título "Encuentra tu equipo InBody cerca de ti" y stats animados
+- Filtros que ya no se ocultan tras el mapa
+- Mapa en dark mode con pines rojos brillando
+- 8 doctores con foto en el sidebar
+- Botón circular oscuro flotante abajo a la derecha del mapa
 
 ## Estructura del proyecto
 
 ```
 src/
 ├── components/
-│   ├── BottomSheet.jsx       Bottom sheet móvil con drag
-│   ├── FiltrosBar.jsx        Búsqueda + dropdowns
-│   ├── Header.jsx            Header con logo y CTA
-│   ├── MapaDirectorio.jsx    Mapbox + markers + popup
-│   ├── ProfesionalCard.jsx   Tarjeta en lista
-│   └── Sidebar.jsx           Sidebar desktop
+│   ├── BottomSheet.jsx       (skeletons añadidos)
+│   ├── FiltrosBar.jsx        (fix z-index dropdowns)
+│   ├── Header.jsx            (logo InBody real)
+│   ├── HeroBar.jsx           (NUEVO: hero con stats)
+│   ├── InBodyLogo.jsx        (NUEVO: SVG inline)
+│   ├── LocationButton.jsx    (NUEVO: ubícame)
+│   ├── MapaDirectorio.jsx    (DARK MODE)
+│   ├── ProfesionalCard.jsx   (skeleton + status dot)
+│   └── Sidebar.jsx           (skeletons añadidos)
 ├── pages/
-│   ├── HomePage.jsx          Directorio público (este bloque)
-│   ├── RegistroPage.jsx      Pendiente (Bloque 3)
-│   └── AdminPage.jsx         Pendiente (Bloque 4)
+│   ├── HomePage.jsx          (integra HeroBar + LocationButton)
+│   ├── RegistroPage.jsx      (Bloque 3)
+│   └── AdminPage.jsx         (Bloque 4)
 ├── hooks/
-│   ├── useIsMobile.js        Detecta desktop vs móvil
-│   └── useProfesionales.js   Fetch de Supabase
 ├── lib/
-│   ├── supabase.js           Cliente
-│   └── mapbox.js             Token + geocoding
 ├── config/
-│   ├── especialidades.js     13 especialidades (Aza aprobó)
-│   ├── modelos.js            16 modelos InBody
-│   └── estados.js            32 estados de México
-└── App.jsx                   Router
+└── App.jsx
 ```
-
-## Decisiones de diseño aplicadas
-
-- **Sidebar lateral en desktop** + **bottom sheet en móvil** (estilo Apple Maps + Airbnb)
-- **Popup en mapa** al hacer clic en pin (no panel lateral, para no sobrecargar)
-- **Marcador estilo Airbnb**: círculo rojo InBody, hover crece, seleccionado invierte colores
-- **Mapa Mapbox Light** como base para que los pines rojos destaquen
-- **Tipografías**: Inter para UI, Fraunces para hero futuro
-- **Color de acento único**: rojo InBody `#E31937` solo para CTAs críticos y pines
-- **Bordes 0.5px** y backdrop-blur en headers para feel Apple
-
-## Variables de entorno (ya configuradas en Vercel)
-
-- `VITE_SUPABASE_URL`
-- `VITE_SUPABASE_ANON_KEY`
-- `VITE_MAPBOX_TOKEN`
-
-No tocar, ya están funcionando.
 
 ## Contacto
 
