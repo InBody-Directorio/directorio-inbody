@@ -1,222 +1,124 @@
-import { useState, useMemo, useCallback } from 'react';
-import MapaDirectorio from '../components/MapaDirectorio.jsx';
-import Sidebar from '../components/Sidebar.jsx';
-import BottomSheet from '../components/BottomSheet.jsx';
-import FiltrosBar from '../components/FiltrosBar.jsx';
+import { useState, useEffect, useMemo } from 'react';
+import { Loader2 } from 'lucide-react';
+import { supabase } from '../lib/supabase.js';
 import Header from '../components/Header.jsx';
-import HeroBar from '../components/HeroBar.jsx';
-import LocationButton from '../components/LocationButton.jsx';
-import HowItWorks from '../components/HowItWorks.jsx';
-import CtaProfesionales from '../components/CtaProfesionales.jsx';
-import MarcaAutoridad from '../components/MarcaAutoridad.jsx';
 import Footer from '../components/Footer.jsx';
+import HeroBar from '../components/HeroBar.jsx';
+import FiltrosBar from '../components/FiltrosBar.jsx';
+import MapaDirectorio from '../components/MapaDirectorio.jsx';
+import ProfesionalCard from '../components/ProfesionalCard.jsx';
 import ProfesionalModal from '../components/ProfesionalModal.jsx';
 import OnboardingHint from '../components/OnboardingHint.jsx';
-import { useProfesionales } from '../hooks/useProfesionales.js';
-import { useIsMobile } from '../hooks/useIsMobile.js';
+import HowItWorks from '../components/HowItWorks.jsx';
+import MarcaAutoridad from '../components/MarcaAutoridad.jsx';
+import CtaProfesionales from '../components/CtaProfesionales.jsx';
 
 export default function HomePage() {
-  const { profesionales, loading, error } = useProfesionales();
-  const isMobile = useIsMobile();
+  const [profesionales, setProfesionales] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
+  const [filters, setFilters] = useState({ especialidad: '', estado: '', modelo: '' });
+  const [selected, setSelected] = useState(null);
 
-  const [query, setQuery] = useState('');
-  const [estado, setEstado] = useState(null);
-  const [especialidad, setEspecialidad] = useState(null);
-  const [selectedId, setSelectedId] = useState(null);
-  const [flyToCoords, setFlyToCoords] = useState(null);
-  const [userLocation, setUserLocation] = useState(null);
-  const [modalData, setModalData] = useState(null);
+  useEffect(function () {
+    async function load() {
+      setLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from('profesionales')
+          .select('*, ubicaciones(*)')
+          .eq('status', 'aprobado')
+          .order('created_at', { ascending: false });
 
-  const filtered = useMemo(
-    function () {
-      return profesionales.filter(function (prof) {
-        if (especialidad && prof.especialidad !== especialidad) return false;
-        if (estado) {
-          const matchEstado = (prof.ubicaciones || []).some(function (u) {
-            return u.estado === estado;
-          });
-          if (!matchEstado) return false;
-        }
-        if (query) {
-          const q = query.toLowerCase();
-          if (!prof.nombre.toLowerCase().includes(q)) return false;
-        }
-        return true;
-      });
-    },
-    [profesionales, query, estado, especialidad]
-  );
+        if (error) throw error;
+        setProfesionales(data || []);
+      } catch (err) {
+        console.error('Error cargando profesionales:', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    load();
+  }, []);
 
-  const availableEstados = useMemo(
-    function () {
-      const set = new Set();
-      profesionales.forEach(function (prof) {
-        if (especialidad && prof.especialidad !== especialidad) return;
-        (prof.ubicaciones || []).forEach(function (u) {
-          if (u.estado) set.add(u.estado);
+  const filtered = useMemo(function () {
+    return profesionales.filter(function (p) {
+      if (filters.especialidad && p.especialidad !== filters.especialidad) return false;
+      if (filters.modelo && p.modelo_inbody !== filters.modelo) return false;
+      if (filters.estado) {
+        const hasEstado = (p.ubicaciones || []).some(function (u) { return u.estado === filters.estado; });
+        if (!hasEstado) return false;
+      }
+      if (search) {
+        const q = search.toLowerCase();
+        const inNombre = (p.nombre || '').toLowerCase().indexOf(q) !== -1;
+        const inEspecialidad = (p.especialidad || '').toLowerCase().indexOf(q) !== -1;
+        const inDesc = (p.descripcion_breve || '').toLowerCase().indexOf(q) !== -1;
+        const inCiudad = (p.ubicaciones || []).some(function (u) {
+          return (u.ciudad || '').toLowerCase().indexOf(q) !== -1 || (u.estado || '').toLowerCase().indexOf(q) !== -1;
         });
-      });
-      return set;
-    },
-    [profesionales, especialidad]
-  );
-
-  const availableEspecialidades = useMemo(
-    function () {
-      const set = new Set();
-      profesionales.forEach(function (prof) {
-        if (estado) {
-          const matchEstado = (prof.ubicaciones || []).some(function (u) {
-            return u.estado === estado;
-          });
-          if (!matchEstado) return;
-        }
-        set.add(prof.especialidad);
-      });
-      return set;
-    },
-    [profesionales, estado]
-  );
-
-  const stats = useMemo(
-    function () {
-      const estadosUnicos = new Set();
-      const especialidadesUnicas = new Set();
-      profesionales.forEach(function (p) {
-        especialidadesUnicas.add(p.especialidad);
-        (p.ubicaciones || []).forEach(function (u) {
-          estadosUnicos.add(u.estado);
-        });
-      });
-      return {
-        totalProfesionales: profesionales.length,
-        totalEstados: estadosUnicos.size,
-        totalEspecialidades: especialidadesUnicas.size,
-      };
-    },
-    [profesionales]
-  );
-
-  const handleSelect = useCallback(function (prof, ubic) {
-    if (!prof) {
-      setSelectedId(null);
-      return;
-    }
-    setSelectedId(prof.id);
-    if (ubic && ubic.lat && ubic.lng) {
-      setFlyToCoords({ lat: ubic.lat, lng: ubic.lng });
-    }
-  }, []);
-
-  const handleSelectFromList = useCallback(function (prof, ubic) {
-    if (!prof) return;
-    setSelectedId(prof.id);
-    if (ubic && ubic.lat && ubic.lng) {
-      setFlyToCoords({ lat: ubic.lat, lng: ubic.lng });
-    }
-    setModalData({ profesional: prof, ubicacion: ubic });
-  }, []);
-
-  const handleOpenDetails = useCallback(function (prof, ubic) {
-    setModalData({ profesional: prof, ubicacion: ubic });
-  }, []);
-
-  const handleCloseModal = useCallback(function () {
-    setModalData(null);
-  }, []);
-
-  const handleLocate = useCallback(function (coords) {
-    setUserLocation(coords);
-  }, []);
-
-  if (error) {
-    return (
-      <div className="min-h-screen flex items-center justify-center p-6">
-        <div className="max-w-md text-center">
-          <div className="text-inbody-red text-sm font-medium mb-2">
-            Error al cargar el directorio
-          </div>
-          <div className="text-xs text-neutral-500 mb-4">{error}</div>
-          <button
-            onClick={function () {
-              window.location.reload();
-            }}
-            className="text-xs text-inbody-red hover:underline"
-          >
-            Reintentar
-          </button>
-        </div>
-      </div>
-    );
-  }
+        if (!inNombre && !inEspecialidad && !inDesc && !inCiudad) return false;
+      }
+      return true;
+    });
+  }, [profesionales, search, filters]);
 
   return (
-    <div className="bg-neutral-50 min-h-screen">
+    <div className="bg-white min-h-screen flex flex-col">
       <Header />
-      <HeroBar
-        totalProfesionales={stats.totalProfesionales}
-        totalEstados={stats.totalEstados}
-        totalEspecialidades={stats.totalEspecialidades}
-        loading={loading}
-      />
-      <FiltrosBar
-        query={query}
-        onQueryChange={setQuery}
-        estado={estado}
-        onEstadoChange={setEstado}
-        especialidad={especialidad}
-        onEspecialidadChange={setEspecialidad}
-        resultsCount={filtered.length}
-        availableEstados={availableEstados}
-        availableEspecialidades={availableEspecialidades}
-      />
 
-      <div className="flex relative" style={{ height: '70vh', minHeight: '500px' }}>
-        {!isMobile && (
-          <Sidebar
-            profesionales={filtered}
-            loading={loading}
-            selectedId={selectedId}
-            onSelect={handleSelectFromList}
-          />
+      <main className="flex-1">
+        <HeroBar value={search} onChange={setSearch} />
+        <MarcaAutoridad />
+        <FiltrosBar filters={filters} onChange={setFilters} totalResults={filtered.length} />
+
+        {loading ? (
+          <div className="max-w-7xl mx-auto px-4 md:px-6 py-20 text-center">
+            <Loader2 className="w-6 h-6 text-inbody-red animate-spin mx-auto mb-3" />
+            <div className="text-sm text-neutral-500">Cargando profesionales...</div>
+          </div>
+        ) : (
+          <>
+            {filtered.length > 0 ? (
+              <>
+                <MapaDirectorio profesionales={filtered} onSelectProfesional={setSelected} />
+                <OnboardingHint />
+                <div className="max-w-7xl mx-auto px-4 md:px-6 py-8 md:py-10">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
+                    {filtered.map(function (p) {
+                      return (
+                        <ProfesionalCard
+                          key={p.id}
+                          profesional={p}
+                          onClick={function () { setSelected(p); }}
+                        />
+                      );
+                    })}
+                  </div>
+                </div>
+              </>
+            ) : (
+              <div className="max-w-3xl mx-auto px-4 md:px-6 py-16 md:py-24 text-center">
+                <div className="text-5xl mb-3 opacity-30">🔍</div>
+                <h3 className="font-display text-xl font-medium text-neutral-900 mb-2">Sin resultados</h3>
+                <p className="text-sm text-neutral-500">Intenta ajustar tus filtros o búsqueda.</p>
+              </div>
+            )}
+          </>
         )}
 
-        <main className="flex-1 relative">
-          <MapaDirectorio
-            profesionales={filtered}
-            selectedId={selectedId}
-            onSelectProfesional={handleSelect}
-            onOpenDetails={handleOpenDetails}
-            flyToCoords={flyToCoords}
-            userLocation={userLocation}
-          />
-          <LocationButton onLocate={handleLocate} />
-        </main>
+        <HowItWorks />
+        <CtaProfesionales />
+      </main>
 
-        {isMobile && (
-          <BottomSheet
-            profesionales={filtered}
-            loading={loading}
-            selectedId={selectedId}
-            onSelect={handleSelectFromList}
-          />
-        )}
-      </div>
-
-      <HowItWorks />
-      <MarcaAutoridad />
-      <CtaProfesionales />
       <Footer />
 
-      {modalData && (
+      {selected && (
         <ProfesionalModal
-          profesional={modalData.profesional}
-          ubicacion={modalData.ubicacion}
-          onClose={handleCloseModal}
+          profesional={selected}
+          onClose={function () { setSelected(null); }}
         />
       )}
-
-      {!loading && profesionales.length > 0 && <OnboardingHint />}
     </div>
   );
 }

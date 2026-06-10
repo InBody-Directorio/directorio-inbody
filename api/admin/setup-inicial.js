@@ -1,24 +1,26 @@
 /**
  * POST /api/admin/setup-inicial
  *
- * Crea los usuarios iniciales en Supabase Auth con sus contraseñas.
- * Solo se puede correr UNA VEZ. Si ya hay usuarios admin con auth, falla.
+ * CORRER UNA SOLA VEZ desde la consola del navegador:
+ *   fetch('/api/admin/setup-inicial', {method:'POST'}).then(r=>r.json()).then(console.log)
  *
- * Llamar manualmente desde el navegador:
- *   fetch('/api/admin/setup-inicial', { method: 'POST' }).then(r => r.json()).then(console.log)
+ * Crea los 2 admins iniciales en Supabase Auth con contraseñas hardcoded.
+ * Después de correr, este endpoint queda bloqueado.
  */
 import { createClient } from '@supabase/supabase-js';
 
-const ADMINS_INICIALES = [
+const INITIAL_ADMINS = [
   {
     email: 'directorioinbody@gmail.com',
     password: 'InBody2026Admin!',
-    nombre: 'Equipo InBody México',
+    nombre: 'Directorio InBody',
+    nivel: 'super_admin',
   },
   {
     email: 'rodrigo@marketinglab.mx',
     password: 'MktLab2026Admin!',
-    nombre: 'Rodrigo Vázquez (MKT LAB)',
+    nombre: 'Rodrigo Vázquez',
+    nivel: 'super_admin',
   },
 ];
 
@@ -32,59 +34,46 @@ export default async function handler(req, res) {
       { auth: { autoRefreshToken: false, persistSession: false } }
     );
 
+    // Si ya hay admins, bloquear
+    const { count } = await supabaseAdmin.from('admins').select('*', { count: 'exact', head: true });
+    if (count && count > 0) {
+      return res.status(403).json({ error: 'Setup inicial ya ejecutado. Si necesitas resetear, hazlo desde Supabase manualmente.' });
+    }
+
     const results = [];
 
-    for (const admin of ADMINS_INICIALES) {
-      // Verificar si ya existe en Auth
-      const { data: { users } } = await supabaseAdmin.auth.admin.listUsers();
-      const existing = users.find(function (u) {
-        return u.email && u.email.toLowerCase() === admin.email.toLowerCase();
-      });
+    for (const a of INITIAL_ADMINS) {
+      try {
+        const { data: created, error: createErr } = await supabaseAdmin.auth.admin.createUser({
+          email: a.email,
+          password: a.password,
+          email_confirm: true,
+          user_metadata: { nombre: a.nombre },
+        });
 
-      if (existing) {
-        results.push({ email: admin.email, status: 'ya_existe', auth_id: existing.id });
-        continue;
-      }
+        if (createErr && createErr.message.indexOf('already') === -1) {
+          results.push({ email: a.email, error: createErr.message });
+          continue;
+        }
 
-      // Crear usuario
-      const { data: newUser, error: createErr } = await supabaseAdmin.auth.admin.createUser({
-        email: admin.email,
-        password: admin.password,
-        email_confirm: true,
-      });
+        const userId = created ? created.user.id : null;
 
-      if (createErr) {
-        results.push({ email: admin.email, status: 'error', error: createErr.message });
-        continue;
-      }
-
-      results.push({ email: admin.email, status: 'creado', auth_id: newUser.user.id });
-    }
-
-    // Asegurar que estén en la tabla admins también (idempotente)
-    for (const admin of ADMINS_INICIALES) {
-      await supabaseAdmin.from('admins').upsert(
-        {
-          email: admin.email,
-          nombre: admin.nombre,
-          nivel: 'super_admin',
+        await supabaseAdmin.from('admins').insert({
+          email: a.email,
+          nombre: a.nombre,
+          nivel: a.nivel,
           activo: true,
-        },
-        { onConflict: 'email' }
-      );
+          auth_user_id: userId,
+        });
+
+        results.push({ email: a.email, ok: true, password: a.password });
+      } catch (err) {
+        results.push({ email: a.email, error: err.message });
+      }
     }
 
-    return res.status(200).json({
-      ok: true,
-      message: 'Setup completado. Ya puedes hacer login con los correos y contraseñas iniciales.',
-      results: results,
-      credenciales: [
-        { email: 'directorioinbody@gmail.com', password: 'InBody2026Admin!' },
-        { email: 'rodrigo@marketinglab.mx', password: 'MktLab2026Admin!' },
-      ],
-    });
+    return res.status(200).json({ ok: true, admins: results });
   } catch (err) {
-    console.error('Error setup-inicial:', err);
     return res.status(500).json({ error: err.message });
   }
 }

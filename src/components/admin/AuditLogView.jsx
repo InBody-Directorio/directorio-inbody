@@ -1,68 +1,84 @@
-import { useState, useEffect, useCallback } from 'react';
-import { Loader2, FileText, CheckCircle2, XCircle, RotateCcw, UserPlus, UserMinus, KeyRound, User } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Loader2, CheckCircle2, XCircle, RotateCcw, UserPlus, Trash2, Lock, FileText } from 'lucide-react';
 import { supabase } from '../../lib/supabase.js';
 
+const ACCION_ICONS = {
+  aprobar_profesional: { icon: CheckCircle2, color: 'text-green-600' },
+  rechazar_profesional: { icon: XCircle, color: 'text-inbody-red' },
+  restaurar_profesional: { icon: RotateCcw, color: 'text-neutral-700' },
+  crear_admin: { icon: UserPlus, color: 'text-neutral-900' },
+  eliminar_admin: { icon: Trash2, color: 'text-inbody-red' },
+  cambiar_password: { icon: Lock, color: 'text-neutral-700' },
+};
+
 const ACCION_LABELS = {
-  aprobar_profesional: { label: 'Aprobó profesional', icon: <CheckCircle2 className="w-3.5 h-3.5" />, color: 'green' },
-  rechazar_profesional: { label: 'Rechazó profesional', icon: <XCircle className="w-3.5 h-3.5" />, color: 'red' },
-  restaurar_profesional: { label: 'Restauró profesional', icon: <RotateCcw className="w-3.5 h-3.5" />, color: 'amber' },
-  crear_admin: { label: 'Creó nuevo admin', icon: <UserPlus className="w-3.5 h-3.5" />, color: 'blue' },
-  eliminar_admin: { label: 'Eliminó admin', icon: <UserMinus className="w-3.5 h-3.5" />, color: 'red' },
-  cambiar_propia_password: { label: 'Cambió su contraseña', icon: <KeyRound className="w-3.5 h-3.5" />, color: 'neutral' },
-  cambiar_password_otro: { label: 'Cambió contraseña de otro', icon: <KeyRound className="w-3.5 h-3.5" />, color: 'amber' },
+  aprobar_profesional: 'Aprobó profesional',
+  rechazar_profesional: 'Rechazó profesional',
+  restaurar_profesional: 'Restauró a pendiente',
+  crear_admin: 'Creó administrador',
+  eliminar_admin: 'Eliminó administrador',
+  cambiar_password: 'Cambió contraseña',
 };
 
 export default function AuditLogView() {
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const fetchLogs = useCallback(async function () {
+  async function load() {
     setLoading(true);
-    try {
-      const { data } = await supabase
-        .from('audit_log')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(100);
-      setLogs(data || []);
-    } catch (err) {
-      console.error('Error cargando audit log:', err);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+    const { data } = await supabase.from('audit_log').select('*').order('created_at', { ascending: false }).limit(100);
+    setLogs(data || []);
+    setLoading(false);
+  }
 
   useEffect(function () {
-    fetchLogs();
-  }, [fetchLogs]);
+    load();
+  }, []);
 
   return (
-    <div className="max-w-3xl">
+    <div>
       <div className="mb-6">
-        <h1 className="font-display text-2xl md:text-3xl font-light tracking-tight text-neutral-900 leading-tight">
-          Audit log
-        </h1>
-        <p className="text-sm text-neutral-500 mt-1">
-          Registro de las últimas 100 acciones realizadas en el panel.
-        </p>
+        <h1 className="font-display text-2xl md:text-3xl font-light text-neutral-900 leading-tight">Audit log</h1>
+        <p className="text-sm text-neutral-500 mt-1">Últimas 100 acciones del panel administrativo.</p>
       </div>
 
       {loading ? (
-        <div className="bg-white border border-neutral-200 rounded-2xl p-12 text-center">
-          <Loader2 className="w-5 h-5 text-neutral-400 animate-spin mx-auto" />
+        <div className="py-12 text-center">
+          <Loader2 className="w-5 h-5 text-inbody-red animate-spin mx-auto" />
         </div>
       ) : logs.length === 0 ? (
-        <div className="bg-white border border-neutral-200 rounded-2xl p-12 text-center">
-          <div className="w-12 h-12 rounded-full bg-neutral-100 mx-auto mb-4 flex items-center justify-center">
-            <FileText className="w-5 h-5 text-neutral-400" />
-          </div>
-          <div className="text-sm font-medium text-neutral-900 mb-1">Sin actividad registrada</div>
-          <div className="text-xs text-neutral-500">Las acciones de los admins aparecerán aquí.</div>
+        <div className="bg-white border border-neutral-200 rounded-2xl py-12 text-center">
+          <FileText className="w-8 h-8 text-neutral-300 mx-auto mb-2" />
+          <div className="text-sm text-neutral-500">Sin actividad registrada aún.</div>
         </div>
       ) : (
-        <div className="bg-white border border-neutral-200 rounded-2xl overflow-hidden divide-y divide-neutral-100">
+        <div className="bg-white border border-neutral-200 rounded-2xl divide-y divide-neutral-150 overflow-hidden">
           {logs.map(function (log) {
-            return <LogRow key={log.id} log={log} />;
+            const config = ACCION_ICONS[log.accion] || { icon: FileText, color: 'text-neutral-500' };
+            const Icon = config.icon;
+            const label = ACCION_LABELS[log.accion] || log.accion;
+            const detalles = log.detalles || {};
+            return (
+              <div key={log.id} className="p-4 flex items-start gap-3">
+                <div className={'w-8 h-8 rounded-lg bg-neutral-50 flex items-center justify-center flex-shrink-0 ' + config.color}>
+                  <Icon className="w-4 h-4" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm text-neutral-900">{label}</div>
+                  {detalles.nombre && (
+                    <div className="text-xs text-neutral-500 truncate">
+                      {detalles.nombre} {detalles.email ? '· ' + detalles.email : ''}
+                    </div>
+                  )}
+                  {detalles.motivo && (
+                    <div className="text-[11px] text-inbody-red mt-1">Motivo: {detalles.motivo}</div>
+                  )}
+                  <div className="text-[10px] text-neutral-400 mt-1">
+                    {log.admin_email} · {formatDate(log.created_at)}
+                  </div>
+                </div>
+              </div>
+            );
           })}
         </div>
       )}
@@ -70,58 +86,7 @@ export default function AuditLogView() {
   );
 }
 
-function LogRow({ log }) {
-  const info = ACCION_LABELS[log.accion] || { label: log.accion, icon: <FileText className="w-3.5 h-3.5" />, color: 'neutral' };
-  const colorClasses = {
-    green: 'bg-green-100 text-green-700',
-    red: 'bg-inbody-red-soft text-inbody-red-dark',
-    amber: 'bg-amber-100 text-amber-700',
-    blue: 'bg-blue-100 text-blue-700',
-    neutral: 'bg-neutral-100 text-neutral-700',
-  };
-
-  const detalles = log.detalles || {};
-  const targetName = detalles.nombre || detalles.email_eliminado || detalles.email || detalles.target_email || '';
-  const motivo = detalles.motivo;
-
-  return (
-    <div className="p-4 flex items-start gap-3">
-      <div className={'w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ' + (colorClasses[info.color] || colorClasses.neutral)}>
-        {info.icon}
-      </div>
-      <div className="flex-1 min-w-0">
-        <div className="text-sm text-neutral-900 leading-snug">
-          <span className="font-medium">{log.admin_email}</span>
-          <span className="text-neutral-500"> · {info.label.toLowerCase()}</span>
-          {targetName && (
-            <>
-              <span className="text-neutral-400"> → </span>
-              <span className="font-medium">{targetName}</span>
-            </>
-          )}
-        </div>
-        {motivo && (
-          <div className="mt-1 text-[11px] text-neutral-600 leading-relaxed bg-neutral-50 px-2.5 py-1.5 rounded-lg inline-block">
-            <span className="text-neutral-400">Motivo: </span>{motivo}
-          </div>
-        )}
-        <div className="text-[10px] text-neutral-400 mt-1">{formatDate(log.created_at)}</div>
-      </div>
-    </div>
-  );
-}
-
 function formatDate(d) {
   if (!d) return '';
-  const date = new Date(d);
-  const now = new Date();
-  const diffMs = now - date;
-  const diffMin = Math.floor(diffMs / 60000);
-  const diffH = Math.floor(diffMs / 3600000);
-  const diffD = Math.floor(diffMs / 86400000);
-  if (diffMin < 1) return 'Hace unos segundos';
-  if (diffMin < 60) return 'Hace ' + diffMin + ' min';
-  if (diffH < 24) return 'Hace ' + diffH + ' h';
-  if (diffD < 7) return 'Hace ' + diffD + ' días';
-  return date.toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+  return new Date(d).toLocaleString('es-MX', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
 }

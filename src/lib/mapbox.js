@@ -4,18 +4,12 @@ if (!MAPBOX_TOKEN) {
   console.error('Falta VITE_MAPBOX_TOKEN. Revisa .env');
 }
 
-// Coordenadas centrales de México
 export const MEXICO_CENTER = {
   lng: -102.5528,
   lat: 23.6345,
   zoom: 4.5,
 };
 
-/**
- * Geocodifica una dirección de texto a coordenadas (lat, lng).
- * @param {string} address
- * @returns {Promise<{lat, lng, formatted} | null>}
- */
 export async function geocodeAddress(address) {
   if (!address || !MAPBOX_TOKEN) return null;
   try {
@@ -43,14 +37,6 @@ export async function geocodeAddress(address) {
   }
 }
 
-/**
- * Reverse geocoding: convierte coordenadas (lat, lng) a una dirección legible.
- * Devuelve dirección, ciudad, estado y código postal por separado.
- *
- * @param {number} lat
- * @param {number} lng
- * @returns {Promise<{formatted, direccion, ciudad, estado, codigo_postal} | null>}
- */
 export async function reverseGeocode(lat, lng) {
   if (!lat || !lng || !MAPBOX_TOKEN) return null;
   try {
@@ -67,10 +53,8 @@ export async function reverseGeocode(lat, lng) {
     const data = await res.json();
     if (!data.features || data.features.length === 0) return null;
 
-    // El primer feature suele ser el más específico
     const main = data.features[0];
 
-    // Buscar el feature tipo "address" para sacar calle + número
     let direccion = '';
     const addressFeat = data.features.find(function (f) {
       return f.place_type && f.place_type.indexOf('address') !== -1;
@@ -82,7 +66,6 @@ export async function reverseGeocode(lat, lng) {
       direccion = (main.address ? main.address + ' ' : '') + main.text;
     }
 
-    // Sacar ciudad, estado y CP del context
     let ciudad = '';
     let estado = '';
     let codigo_postal = '';

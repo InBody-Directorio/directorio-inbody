@@ -1,36 +1,29 @@
 import { useState } from 'react';
-import { Loader2, KeyRound, Mail, Shield, User, CheckCircle2, AlertCircle, Eye, EyeOff } from 'lucide-react';
+import { Loader2, Lock, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { cambiarPassword } from '../../lib/adminApi.js';
 
 export default function MiCuentaView({ admin, user }) {
+  const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState(false);
 
   async function handleSubmit(e) {
-    if (e) e.preventDefault();
+    e.preventDefault();
     setError('');
     setSuccess(false);
-
-    if (newPassword.length < 8) {
-      setError('La contraseña debe tener al menos 8 caracteres');
-      return;
-    }
-    if (newPassword !== confirmPassword) {
-      setError('Las contraseñas no coinciden');
-      return;
-    }
+    if (newPassword.length < 8) return setError('La contraseña debe tener al menos 8 caracteres.');
+    if (newPassword !== confirmPassword) return setError('Las contraseñas no coinciden.');
 
     setLoading(true);
     try {
-      await cambiarPassword(newPassword);
+      await cambiarPassword(currentPassword, newPassword);
       setSuccess(true);
+      setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
-      setTimeout(function () { setSuccess(false); }, 5000);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -39,135 +32,57 @@ export default function MiCuentaView({ admin, user }) {
   }
 
   return (
-    <div className="max-w-2xl">
+    <div className="max-w-xl">
       <div className="mb-6">
-        <h1 className="font-display text-2xl md:text-3xl font-light tracking-tight text-neutral-900 leading-tight">
-          Mi cuenta
-        </h1>
-        <p className="text-sm text-neutral-500 mt-1">
-          Información de tu cuenta y opciones de seguridad.
-        </p>
+        <h1 className="font-display text-2xl md:text-3xl font-light text-neutral-900 leading-tight">Mi cuenta</h1>
+        <p className="text-sm text-neutral-500 mt-1">Información de tu sesión y cambio de contraseña.</p>
       </div>
 
-      <div className="bg-white border border-neutral-200 rounded-3xl p-6 md:p-7 mb-6">
-        <div className="flex items-center gap-4 mb-6">
-          <div className="w-14 h-14 rounded-full bg-gradient-to-br from-inbody-red to-inbody-red-dark flex items-center justify-center text-white font-semibold text-xl flex-shrink-0">
-            {(admin.nombre || admin.email).charAt(0).toUpperCase()}
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="font-display text-xl font-medium text-neutral-900 leading-tight">
-              {admin.nombre || 'Sin nombre'}
-            </div>
-            <div className="flex items-center gap-1 text-xs text-neutral-500 mt-0.5">
-              {admin.nivel === 'super_admin' ? (
-                <>
-                  <Shield className="w-3 h-3" />
-                  Super Administrador
-                </>
-              ) : (
-                <>
-                  <User className="w-3 h-3" />
-                  Administrador
-                </>
-              )}
-            </div>
-          </div>
-        </div>
-
-        <div className="space-y-2 text-xs text-neutral-700">
-          <InfoRow icon={<Mail className="w-3.5 h-3.5" />} label="Correo" value={admin.email} />
+      <div className="bg-white border border-neutral-200 rounded-2xl p-5 md:p-6 mb-5">
+        <div className="text-[10px] uppercase tracking-[0.14em] text-neutral-400 font-semibold mb-3">Información</div>
+        <div className="space-y-2 text-sm">
+          <div><span className="text-neutral-500">Nombre:</span> <strong>{admin && admin.nombre ? admin.nombre : '—'}</strong></div>
+          <div><span className="text-neutral-500">Correo:</span> <strong>{user && user.email}</strong></div>
+          <div><span className="text-neutral-500">Nivel:</span> <strong className="text-inbody-red">{admin && admin.nivel === 'super_admin' ? 'Super Admin' : 'Admin'}</strong></div>
         </div>
       </div>
 
-      <div className="bg-white border border-neutral-200 rounded-3xl p-6 md:p-7">
-        <div className="flex items-center gap-3 mb-5">
-          <div className="w-9 h-9 rounded-full bg-inbody-red-soft text-inbody-red flex items-center justify-center">
-            <KeyRound className="w-4 h-4" />
-          </div>
-          <div>
-            <h2 className="text-base font-medium text-neutral-900">Cambiar contraseña</h2>
-            <p className="text-xs text-neutral-500">Mínimo 8 caracteres</p>
-          </div>
+      <form onSubmit={handleSubmit} className="bg-white border border-neutral-200 rounded-2xl p-5 md:p-6 space-y-3">
+        <div className="text-[10px] uppercase tracking-[0.14em] text-neutral-400 font-semibold mb-1">Cambiar contraseña</div>
+
+        <div>
+          <label className="block text-xs font-medium text-neutral-700 mb-1.5">Contraseña actual</label>
+          <input type="password" value={currentPassword} onChange={function (e) { setCurrentPassword(e.target.value); }} required className="w-full px-3.5 py-2.5 bg-white border border-neutral-200 focus:border-inbody-red/40 focus:ring-2 focus:ring-inbody-red/20 rounded-xl text-sm outline-none" />
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-neutral-700 mb-1.5">Nueva contraseña</label>
+          <input type="password" value={newPassword} onChange={function (e) { setNewPassword(e.target.value); }} required minLength={8} className="w-full px-3.5 py-2.5 bg-white border border-neutral-200 focus:border-inbody-red/40 focus:ring-2 focus:ring-inbody-red/20 rounded-xl text-sm outline-none" />
+          <div className="mt-1 text-[10px] text-neutral-500">Mínimo 8 caracteres.</div>
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-neutral-700 mb-1.5">Confirmar nueva contraseña</label>
+          <input type="password" value={confirmPassword} onChange={function (e) { setConfirmPassword(e.target.value); }} required className="w-full px-3.5 py-2.5 bg-white border border-neutral-200 focus:border-inbody-red/40 focus:ring-2 focus:ring-inbody-red/20 rounded-xl text-sm outline-none" />
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-xs font-medium text-neutral-700 mb-1.5">
-              Nueva contraseña <span className="text-inbody-red">*</span>
-            </label>
-            <div className="relative">
-              <input
-                type={showPass ? 'text' : 'password'}
-                value={newPassword}
-                onChange={function (e) { setNewPassword(e.target.value); }}
-                placeholder="Mínimo 8 caracteres"
-                required
-                minLength={8}
-                className="w-full pr-10 px-3.5 py-2.5 bg-white border border-neutral-200 focus:border-inbody-red/40 focus:ring-2 focus:ring-inbody-red/20 rounded-xl text-sm outline-none font-mono"
-              />
-              <button
-                type="button"
-                onClick={function () { setShowPass(!showPass); }}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-700"
-              >
-                {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-              </button>
-            </div>
+        {error && (
+          <div className="p-3 bg-inbody-red-soft border border-inbody-red/20 rounded-xl flex items-start gap-2">
+            <AlertCircle className="w-3.5 h-3.5 text-inbody-red flex-shrink-0 mt-0.5" />
+            <div className="text-[11px] text-inbody-red-dark">{error}</div>
           </div>
+        )}
 
-          <div>
-            <label className="block text-xs font-medium text-neutral-700 mb-1.5">
-              Confirmar nueva contraseña <span className="text-inbody-red">*</span>
-            </label>
-            <input
-              type={showPass ? 'text' : 'password'}
-              value={confirmPassword}
-              onChange={function (e) { setConfirmPassword(e.target.value); }}
-              placeholder="Repite la contraseña"
-              required
-              minLength={8}
-              className="w-full px-3.5 py-2.5 bg-white border border-neutral-200 focus:border-inbody-red/40 focus:ring-2 focus:ring-inbody-red/20 rounded-xl text-sm outline-none font-mono"
-            />
+        {success && (
+          <div className="p-3 bg-green-50 border border-green-200 rounded-xl flex items-start gap-2">
+            <CheckCircle2 className="w-3.5 h-3.5 text-green-600 flex-shrink-0 mt-0.5" />
+            <div className="text-[11px] text-green-800">Contraseña actualizada correctamente.</div>
           </div>
+        )}
 
-          {error && (
-            <div className="p-3 bg-inbody-red-soft border border-inbody-red/20 rounded-xl flex items-start gap-2.5">
-              <AlertCircle className="w-3.5 h-3.5 text-inbody-red flex-shrink-0 mt-0.5" />
-              <div className="text-[11px] text-inbody-red-dark">{error}</div>
-            </div>
-          )}
-
-          {success && (
-            <div className="p-3 bg-green-50 border border-green-200 rounded-xl flex items-start gap-2.5">
-              <CheckCircle2 className="w-3.5 h-3.5 text-green-700 flex-shrink-0 mt-0.5" />
-              <div className="text-[11px] text-green-800">Contraseña actualizada correctamente</div>
-            </div>
-          )}
-
-          <div className="flex justify-end pt-2">
-            <button
-              type="submit"
-              disabled={loading || !newPassword || !confirmPassword}
-              className="flex items-center gap-1.5 px-5 py-2.5 rounded-full bg-neutral-900 hover:bg-inbody-red text-white text-sm font-semibold transition-all disabled:opacity-50"
-            >
-              {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <KeyRound className="w-3.5 h-3.5" />}
-              Actualizar contraseña
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
-}
-
-function InfoRow({ icon, label, value }) {
-  return (
-    <div className="flex items-center gap-3 py-2 border-b border-neutral-100 last:border-0">
-      <div className="text-neutral-400">{icon}</div>
-      <div className="flex-1 flex items-center justify-between gap-3">
-        <span className="text-neutral-500">{label}</span>
-        <span className="text-neutral-900 font-medium">{value}</span>
-      </div>
+        <button type="submit" disabled={loading} className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-inbody-red hover:bg-inbody-red-hover text-white text-sm font-semibold disabled:opacity-60 transition-all">
+          {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Lock className="w-3.5 h-3.5" />}
+          Actualizar contraseña
+        </button>
+      </form>
     </div>
   );
 }

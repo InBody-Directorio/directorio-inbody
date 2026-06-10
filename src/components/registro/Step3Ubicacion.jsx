@@ -1,361 +1,247 @@
-import { useEffect, useRef, useState } from 'react';
-import { FormField, TextInput, Select } from './FormFields.jsx';
-import { Plus, X, CheckCircle2, AlertCircle, Loader2, Move } from 'lucide-react';
-import { ESTADOS_MEXICO } from '../../config/estados.js';
-import { geocodeAddress, reverseGeocode, MAPBOX_TOKEN } from '../../lib/mapbox.js';
+import { useState, useRef, useEffect } from 'react';
+import { Plus, X, MapPin, Loader2, Search } from 'lucide-react';
 import mapboxgl from 'mapbox-gl';
+import { FormField, TextInput, Select } from './FormFields.jsx';
+import { ESTADOS_MX } from '../../config/estados.js';
+import { MAPBOX_TOKEN, geocodeAddress, reverseGeocode } from '../../lib/mapbox.js';
 
 mapboxgl.accessToken = MAPBOX_TOKEN;
 
+const MAX_UBICACIONES = 3;
+
 export default function Step3Ubicacion({ formData, updateField, errors }) {
-  const ubicaciones = formData.ubicaciones || [
-    { direccion_completa: '', ciudad: '', estado: '', codigo_postal: '', lat: null, lng: null, geo_status: 'idle' },
-  ];
+  const ubicaciones = formData.ubicaciones || [];
 
-  function updateUbicacion(idx, patch) {
-    const next = ubicaciones.slice();
-    next[idx] = { ...next[idx], ...patch };
-    updateField('ubicaciones', next);
-  }
-
-  function addUbicacion() {
-    if (ubicaciones.length >= 3) return;
-    updateField('ubicaciones', [
-      ...ubicaciones,
-      { direccion_completa: '', ciudad: '', estado: '', codigo_postal: '', lat: null, lng: null, geo_status: 'idle' },
-    ]);
-  }
-
-  function removeUbicacion(idx) {
-    if (ubicaciones.length === 1) return;
-    const next = ubicaciones.filter(function (_, i) {
-      return i !== idx;
+  function updateUbic(idx, key, value) {
+    const next = ubicaciones.map(function (u, i) {
+      if (i !== idx) return u;
+      return { ...u, [key]: value };
     });
     updateField('ubicaciones', next);
+  }
+
+  function setCoords(idx, lat, lng) {
+    const next = ubicaciones.map(function (u, i) {
+      if (i !== idx) return u;
+      return { ...u, lat: lat, lng: lng, geo_status: 'geocoded' };
+    });
+    updateField('ubicaciones', next);
+  }
+
+  function applyReverseData(idx, geo) {
+    if (!geo) return;
+    const next = ubicaciones.map(function (u, i) {
+      if (i !== idx) return u;
+      return {
+        ...u,
+        direccion_completa: geo.direccion || u.direccion_completa,
+        ciudad: geo.ciudad || u.ciudad,
+        estado: geo.estado || u.estado,
+        codigo_postal: geo.codigo_postal || u.codigo_postal,
+      };
+    });
+    updateField('ubicaciones', next);
+  }
+
+  function addUbic() {
+    if (ubicaciones.length >= MAX_UBICACIONES) return;
+    updateField('ubicaciones', ubicaciones.concat([{
+      direccion_completa: '', ciudad: '', estado: '', codigo_postal: '', lat: null, lng: null, geo_status: 'idle',
+    }]));
+  }
+
+  function removeUbic(idx) {
+    if (ubicaciones.length === 1) return;
+    updateField('ubicaciones', ubicaciones.filter(function (_, i) { return i !== idx; }));
   }
 
   return (
     <div className="space-y-5">
       <div>
-        <div className="text-[10px] uppercase tracking-[0.14em] text-inbody-red font-semibold mb-2">
-          Paso 3
-        </div>
+        <div className="text-[10px] uppercase tracking-[0.14em] text-inbody-red font-semibold mb-2">Paso 3</div>
         <h2 className="font-display text-2xl md:text-3xl font-light tracking-tight text-neutral-900 leading-tight mb-1.5">
-          ¿Dónde estás <em className="italic font-light text-inbody-red">ubicado?</em>
+          Ubicación de tu consultorio
         </h2>
         <p className="text-sm text-neutral-500 leading-relaxed">
-          Llena tu dirección y luego ajusta el pin en el mapa para precisión exacta. Si tienes más de una sucursal, puedes agregar hasta 3.
+          Puedes registrar hasta {MAX_UBICACIONES} ubicaciones. La primera será tu ubicación principal.
         </p>
       </div>
 
-      {ubicaciones.map(function (ubic, idx) {
+      {ubicaciones.map(function (u, idx) {
+        const err = (errors['ubicacion_' + idx]) || {};
         return (
-          <UbicacionBlock
+          <UbicacionFields
             key={idx}
-            index={idx}
-            ubicacion={ubic}
-            isFirst={idx === 0}
-            canRemove={ubicaciones.length > 1}
-            onUpdate={function (patch) {
-              updateUbicacion(idx, patch);
-            }}
-            onRemove={function () {
-              removeUbicacion(idx);
-            }}
-            errors={errors['ubicacion_' + idx] || {}}
+            idx={idx}
+            ubicacion={u}
+            onChange={function (k, v) { updateUbic(idx, k, v); }}
+            onCoords={function (lat, lng) { setCoords(idx, lat, lng); }}
+            onReverse={function (geo) { applyReverseData(idx, geo); }}
+            onRemove={ubicaciones.length > 1 ? function () { removeUbic(idx); } : null}
+            errors={err}
           />
         );
       })}
 
-      {ubicaciones.length < 3 && (
+      {ubicaciones.length < MAX_UBICACIONES && (
         <button
           type="button"
-          onClick={addUbicacion}
-          className="w-full py-3 border-2 border-dashed border-neutral-300 hover:border-inbody-red/40 hover:bg-inbody-red-soft/30 rounded-2xl text-sm font-medium text-neutral-600 hover:text-inbody-red transition-all flex items-center justify-center gap-2"
+          onClick={addUbic}
+          className="w-full p-3 border-2 border-dashed border-neutral-200 hover:border-inbody-red/30 hover:bg-inbody-red-soft/30 rounded-xl text-xs text-neutral-700 hover:text-inbody-red transition-all flex items-center justify-center gap-2"
         >
           <Plus className="w-4 h-4" />
-          Agregar otra ubicación ({ubicaciones.length}/3)
+          Agregar otra ubicación
         </button>
       )}
     </div>
   );
 }
 
-function UbicacionBlock({ index, ubicacion, isFirst, canRemove, onUpdate, onRemove, errors }) {
+function UbicacionFields({ idx, ubicacion, onChange, onCoords, onReverse, onRemove, errors }) {
   const mapContainer = useRef(null);
   const map = useRef(null);
   const marker = useRef(null);
-  const geocodeTimeout = useRef(null);
+  const [searching, setSearching] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
-  // Flag: cuando el usuario está moviendo el pin, NO disparar geocode directo
-  // (para que no se pelee con el reverse geocode)
-  const isUserDragging = useRef(false);
+  useEffect(function () {
+    if (!mapContainer.current || map.current) return;
 
-  // Geocodificar con debounce cuando cambian campos de texto
-  useEffect(
-    function () {
-      if (isUserDragging.current) return;
+    const initialCenter = ubicacion.lat && ubicacion.lng
+      ? [ubicacion.lng, ubicacion.lat]
+      : [-99.1332, 19.4326]; // CDMX
 
-      if (
-        !ubicacion.direccion_completa ||
-        !ubicacion.ciudad ||
-        !ubicacion.estado
-      ) {
-        return;
+    map.current = new mapboxgl.Map({
+      container: mapContainer.current,
+      style: 'mapbox://styles/mapbox/light-v11',
+      center: initialCenter,
+      zoom: ubicacion.lat ? 14 : 11,
+      attributionControl: false,
+    });
+
+    marker.current = new mapboxgl.Marker({
+      color: '#E31937',
+      draggable: true,
+    }).setLngLat(initialCenter).addTo(map.current);
+
+    marker.current.on('dragend', async function () {
+      const lngLat = marker.current.getLngLat();
+      onCoords(lngLat.lat, lngLat.lng);
+      const geo = await reverseGeocode(lngLat.lat, lngLat.lng);
+      if (geo) onReverse(geo);
+    });
+
+    return function () {
+      if (map.current) {
+        map.current.remove();
+        map.current = null;
       }
+    };
+  }, []);
 
-      if (geocodeTimeout.current) clearTimeout(geocodeTimeout.current);
+  useEffect(function () {
+    if (ubicacion.lat && ubicacion.lng && marker.current && map.current) {
+      marker.current.setLngLat([ubicacion.lng, ubicacion.lat]);
+      map.current.flyTo({ center: [ubicacion.lng, ubicacion.lat], zoom: 14, duration: 800 });
+    }
+  }, [ubicacion.lat, ubicacion.lng]);
 
-      onUpdate({ geo_status: 'loading' });
-
-      geocodeTimeout.current = setTimeout(async function () {
-        const fullAddress =
-          ubicacion.direccion_completa +
-          ', ' +
-          ubicacion.ciudad +
-          ', ' +
-          ubicacion.estado +
-          (ubicacion.codigo_postal ? ', ' + ubicacion.codigo_postal : '') +
-          ', México';
-        try {
-          const result = await geocodeAddress(fullAddress);
-          if (result) {
-            onUpdate({
-              geo_status: 'success',
-              lat: result.lat,
-              lng: result.lng,
-              direccion_formateada: result.formatted,
-            });
-          } else {
-            onUpdate({ geo_status: 'not_found' });
-          }
-        } catch (err) {
-          onUpdate({ geo_status: 'error' });
-        }
-      }, 1200);
-
-      return function () {
-        if (geocodeTimeout.current) clearTimeout(geocodeTimeout.current);
-      };
-    },
-    [
-      ubicacion.direccion_completa,
-      ubicacion.ciudad,
-      ubicacion.estado,
-      ubicacion.codigo_postal,
-    ]
-  );
-
-  // Inicializar/actualizar mini mapa cuando hay coordenadas
-  useEffect(
-    function () {
-      if (!ubicacion.lat || !ubicacion.lng) {
-        if (map.current) {
-          map.current.remove();
-          map.current = null;
-          marker.current = null;
-        }
-        return;
+  async function handleSearch() {
+    if (!searchQuery) return;
+    setSearching(true);
+    try {
+      const result = await geocodeAddress(searchQuery);
+      if (result) {
+        onCoords(result.lat, result.lng);
+        const geo = await reverseGeocode(result.lat, result.lng);
+        if (geo) onReverse(geo);
       }
-      if (!mapContainer.current) return;
-
-      // Primera vez: crear el mapa
-      if (!map.current) {
-        map.current = new mapboxgl.Map({
-          container: mapContainer.current,
-          style: 'mapbox://styles/mapbox/light-v11',
-          center: [ubicacion.lng, ubicacion.lat],
-          zoom: 15,
-          attributionControl: false,
-        });
-
-        map.current.on('load', function () {
-          const el = document.createElement('div');
-          el.className = 'inbody-marker selected';
-
-          marker.current = new mapboxgl.Marker({
-            element: el,
-            draggable: true,
-          })
-            .setLngLat([ubicacion.lng, ubicacion.lat])
-            .addTo(map.current);
-
-          // Al iniciar el drag, marcamos el flag
-          marker.current.on('dragstart', function () {
-            isUserDragging.current = true;
-          });
-
-          // Cuando suelta el pin, hacer reverse geocode y actualizar campos
-          marker.current.on('dragend', async function () {
-            const lngLat = marker.current.getLngLat();
-            const newLat = lngLat.lat;
-            const newLng = lngLat.lng;
-
-            onUpdate({
-              lat: newLat,
-              lng: newLng,
-              geo_status: 'reversing',
-            });
-
-            try {
-              const reverse = await reverseGeocode(newLat, newLng);
-              if (reverse) {
-                const updates = {
-                  geo_status: 'success',
-                  direccion_formateada: reverse.formatted,
-                };
-                if (reverse.direccion) updates.direccion_completa = reverse.direccion;
-                if (reverse.ciudad) updates.ciudad = reverse.ciudad;
-                if (reverse.estado) updates.estado = reverse.estado;
-                if (reverse.codigo_postal) updates.codigo_postal = reverse.codigo_postal;
-                onUpdate(updates);
-              } else {
-                onUpdate({ geo_status: 'success' });
-              }
-            } catch (err) {
-              onUpdate({ geo_status: 'success' });
-            } finally {
-              // Liberar el flag para que el geocoding directo vuelva a funcionar
-              setTimeout(function () {
-                isUserDragging.current = false;
-              }, 800);
-            }
-          });
-        });
-      } else {
-        // Actualizaciones subsecuentes: solo si NO viene de drag del usuario
-        if (!isUserDragging.current && marker.current) {
-          map.current.flyTo({
-            center: [ubicacion.lng, ubicacion.lat],
-            zoom: 15,
-            duration: 600,
-          });
-          marker.current.setLngLat([ubicacion.lng, ubicacion.lat]);
-        }
-      }
-    },
-    [ubicacion.lat, ubicacion.lng]
-  );
-
-  const geoStatus = ubicacion.geo_status || 'idle';
+    } finally {
+      setSearching(false);
+    }
+  }
 
   return (
-    <div className="bg-white border border-neutral-200 rounded-2xl p-5 space-y-4">
+    <div className="bg-white border border-neutral-200 rounded-2xl p-4 md:p-5 space-y-4">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-full bg-inbody-red-soft text-inbody-red flex items-center justify-center text-xs font-semibold">
-            {index + 1}
-          </div>
-          <div className="text-sm font-medium text-neutral-900">
-            {isFirst ? 'Ubicación principal' : 'Ubicación ' + (index + 1)}
-          </div>
+        <div className="text-[10px] uppercase tracking-[0.14em] text-neutral-400 font-semibold">
+          {idx === 0 ? 'Ubicación principal' : 'Ubicación ' + (idx + 1)}
         </div>
-        {canRemove && (
-          <button
-            type="button"
-            onClick={onRemove}
-            className="text-xs text-neutral-500 hover:text-inbody-red transition-colors flex items-center gap-1"
-          >
-            <X className="w-3 h-3" />
-            Quitar
+        {onRemove && (
+          <button type="button" onClick={onRemove} className="text-xs text-inbody-red hover:underline flex items-center gap-1">
+            <X className="w-3 h-3" />Quitar
           </button>
         )}
       </div>
 
-      <FormField
-        label="Dirección (calle y número)"
-        required
-        error={errors.direccion_completa}
-      >
+      <div>
+        <label className="block text-xs font-medium text-neutral-700 mb-1.5">Buscar dirección</label>
+        <div className="flex gap-2">
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={function (e) { setSearchQuery(e.target.value); }}
+            onKeyDown={function (e) { if (e.key === 'Enter') { e.preventDefault(); handleSearch(); } }}
+            placeholder="Ej. Av. Reforma 222, Polanco, CDMX"
+            className="flex-1 px-3.5 py-2.5 bg-white border border-neutral-200 focus:border-inbody-red/40 focus:ring-2 focus:ring-inbody-red/20 rounded-xl text-sm transition-all outline-none"
+          />
+          <button
+            type="button"
+            onClick={handleSearch}
+            disabled={searching}
+            className="px-4 py-2.5 rounded-xl bg-neutral-900 hover:bg-inbody-red text-white text-xs font-medium transition-colors disabled:opacity-60 flex items-center gap-1.5"
+          >
+            {searching ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Search className="w-3.5 h-3.5" />}
+            Buscar
+          </button>
+        </div>
+        <div className="mt-1 text-[11px] text-neutral-500">O arrastra el pin rojo en el mapa para fijar tu ubicación exacta.</div>
+      </div>
+
+      <div ref={mapContainer} className="rounded-xl overflow-hidden border border-neutral-200" style={{ height: '240px' }} />
+
+      <FormField label="Dirección completa" required error={errors.direccion_completa}>
         <TextInput
           value={ubicacion.direccion_completa}
-          onChange={function (v) {
-            onUpdate({ direccion_completa: v });
-          }}
-          placeholder="Av. Insurgentes Sur 1234, Del Valle"
+          onChange={function (v) { onChange('direccion_completa', v); }}
+          placeholder="Calle, número, colonia"
           error={errors.direccion_completa}
         />
       </FormField>
 
-      <div className="grid grid-cols-2 gap-3">
-        <FormField label="Ciudad" required error={errors.ciudad}>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <FormField label="Ciudad / Municipio" required error={errors.ciudad}>
           <TextInput
             value={ubicacion.ciudad}
-            onChange={function (v) {
-              onUpdate({ ciudad: v });
-            }}
-            placeholder="Ciudad de México"
+            onChange={function (v) { onChange('ciudad', v); }}
+            placeholder="Ej. Miguel Hidalgo"
             error={errors.ciudad}
           />
         </FormField>
         <FormField label="Estado" required error={errors.estado}>
           <Select
             value={ubicacion.estado}
-            onChange={function (v) {
-              onUpdate({ estado: v });
-            }}
-            placeholder="Selecciona"
-            options={ESTADOS_MEXICO.map(function (e) {
-              return { value: e, label: e };
-            })}
+            onChange={function (v) { onChange('estado', v); }}
+            placeholder="Selecciona el estado"
+            options={ESTADOS_MX.map(function (e) { return { value: e, label: e }; })}
             error={errors.estado}
           />
         </FormField>
       </div>
 
-      <FormField
-        label="Código postal"
-        hint="Ayuda a precisar la ubicación en el mapa"
-      >
+      <FormField label="Código postal" hint="Opcional pero recomendado">
         <TextInput
           value={ubicacion.codigo_postal}
-          onChange={function (v) {
-            onUpdate({ codigo_postal: v.replace(/\D/g, '').slice(0, 5) });
-          }}
-          placeholder="03100"
+          onChange={function (v) { onChange('codigo_postal', v.replace(/\D/g, '').slice(0, 5)); }}
+          placeholder="Ej. 11550"
           maxLength={5}
         />
       </FormField>
 
-      {/* Estado de geocodificación + mapa con pin arrastrable */}
-      {(geoStatus !== 'idle' || ubicacion.lat) && (
-        <div className="rounded-xl overflow-hidden border border-neutral-200">
-          <div className="px-3.5 py-2.5 bg-neutral-50 flex items-center gap-2">
-            {geoStatus === 'loading' && (
-              <>
-                <Loader2 className="w-3.5 h-3.5 text-neutral-400 animate-spin" />
-                <span className="text-xs text-neutral-500">Buscando ubicación en el mapa...</span>
-              </>
-            )}
-            {geoStatus === 'reversing' && (
-              <>
-                <Loader2 className="w-3.5 h-3.5 text-inbody-red animate-spin" />
-                <span className="text-xs text-neutral-700">Actualizando dirección...</span>
-              </>
-            )}
-            {geoStatus === 'success' && (
-              <>
-                <Move className="w-3.5 h-3.5 text-inbody-red" />
-                <span className="text-xs text-neutral-700">
-                  <strong className="text-neutral-900">Arrastra el pin</strong> para ajustar la ubicación exacta
-                </span>
-              </>
-            )}
-            {(geoStatus === 'not_found' || geoStatus === 'error') && (
-              <>
-                <AlertCircle className="w-3.5 h-3.5 text-amber-600" />
-                <span className="text-xs text-neutral-700 leading-relaxed">
-                  No pudimos ubicar tu dirección automáticamente. El equipo de InBody la revisará al aprobar tu registro.
-                </span>
-              </>
-            )}
-          </div>
-          {ubicacion.lat && ubicacion.lng && (
-            <div
-              ref={mapContainer}
-              style={{ height: '220px', width: '100%' }}
-            />
-          )}
+      {ubicacion.lat && ubicacion.lng && (
+        <div className="flex items-center gap-1.5 text-[11px] text-green-700">
+          <MapPin className="w-3 h-3" />
+          Coordenadas confirmadas: {ubicacion.lat.toFixed(5)}, {ubicacion.lng.toFixed(5)}
         </div>
       )}
     </div>

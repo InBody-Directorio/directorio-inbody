@@ -1,99 +1,29 @@
-import { useEffect, useState } from 'react';
-import { MapPin, Activity, Users } from 'lucide-react';
+import { Search } from 'lucide-react';
 
-export default function HeroBar({ totalProfesionales, totalEstados, totalEspecialidades, loading }) {
+export default function HeroBar({ value, onChange }) {
   return (
-    <div className="bg-gradient-to-b from-neutral-50 to-white border-b border-neutral-200/60 px-4 md:px-6 py-4 md:py-6 flex-shrink-0 relative overflow-hidden">
-      <div className="absolute inset-0 opacity-[0.025] pointer-events-none" style={{
-        backgroundImage: 'radial-gradient(circle at 1px 1px, #18181a 1px, transparent 0)',
-        backgroundSize: '24px 24px',
-      }} />
-
-      <div className="relative max-w-4xl">
-        <div className="flex items-center gap-2 mb-2">
-          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-inbody-red-soft border border-inbody-red/15">
-            <div className="relative">
-              <div className="w-1.5 h-1.5 rounded-full bg-inbody-red" />
-              <div className="absolute inset-0 w-1.5 h-1.5 rounded-full bg-inbody-red animate-ping opacity-75" />
-            </div>
-            <span className="text-[10px] font-medium uppercase tracking-wider text-inbody-red-dark">
-              En vivo
-            </span>
-          </div>
+    <div className="bg-gradient-to-br from-white via-neutral-50 to-white border-b border-neutral-150">
+      <div className="max-w-5xl mx-auto px-4 md:px-6 py-10 md:py-16 text-center">
+        <div className="text-[11px] uppercase tracking-[0.14em] text-inbody-red font-semibold mb-3">
+          Directorio Oficial · México
         </div>
-
-        <h1 className="font-display text-xl md:text-3xl font-light tracking-tight leading-[1.1] text-neutral-900 mb-1.5 md:mb-2">
-          Encuentra tu equipo InBody <em className="italic font-light text-inbody-red">cerca de ti</em>
+        <h1 className="font-display text-3xl md:text-5xl lg:text-6xl font-light tracking-tight text-neutral-900 leading-[1.05] mb-4 md:mb-6">
+          Encuentra tu profesional<br className="hidden md:block" /> certificado con <span className="font-medium text-inbody-red">InBody</span>
         </h1>
-        <p className="hidden md:block text-sm text-neutral-500 leading-relaxed max-w-xl mb-4 md:mb-5">
-          Profesionales certificados con tecnología de composición corporal líder en el mundo.
+        <p className="text-sm md:text-base text-neutral-600 max-w-2xl mx-auto leading-relaxed mb-6 md:mb-8">
+          Busca al especialista más cercano. Todos cuentan con equipo InBody verificado por nuestro equipo en México.
         </p>
-
-        <div className="flex flex-wrap items-center gap-2 mt-3">
-          {loading ? (
-            <>
-              <StatChipSkeleton />
-              <StatChipSkeleton />
-              <StatChipSkeleton />
-            </>
-          ) : (
-            <>
-              <StatChip
-                icon={<Users className="w-3 h-3" />}
-                value={totalProfesionales}
-                label={'profesional' + (totalProfesionales === 1 ? '' : 'es')}
-              />
-              <StatChip
-                icon={<MapPin className="w-3 h-3" />}
-                value={totalEstados}
-                label={'estado' + (totalEstados === 1 ? '' : 's')}
-              />
-              <StatChip
-                icon={<Activity className="w-3 h-3" />}
-                value={totalEspecialidades}
-                label={'especialidad' + (totalEspecialidades === 1 ? '' : 'es')}
-              />
-            </>
-          )}
+        <div className="max-w-2xl mx-auto relative">
+          <Search className="absolute left-4 md:left-5 top-1/2 -translate-y-1/2 w-4 h-4 md:w-5 md:h-5 text-neutral-400 pointer-events-none" />
+          <input
+            type="text"
+            value={value}
+            onChange={function (e) { onChange(e.target.value); }}
+            placeholder="Buscar por nombre, ciudad o especialidad..."
+            className="w-full pl-11 md:pl-12 pr-4 py-3.5 md:py-4 bg-white border border-neutral-200 focus:border-inbody-red/30 focus:ring-4 focus:ring-inbody-red/10 rounded-full text-sm md:text-base transition-all outline-none shadow-sm"
+          />
         </div>
       </div>
-    </div>
-  );
-}
-
-function StatChip({ icon, value, label }) {
-  const [displayValue, setDisplayValue] = useState(0);
-
-  useEffect(function () {
-    if (typeof value !== 'number') return;
-    let start = 0;
-    const duration = 800;
-    const startTime = performance.now();
-
-    function animate(now) {
-      const elapsed = now - startTime;
-      const progress = Math.min(elapsed / duration, 1);
-      const eased = 1 - Math.pow(1 - progress, 3);
-      setDisplayValue(Math.round(start + (value - start) * eased));
-      if (progress < 1) requestAnimationFrame(animate);
-    }
-    requestAnimationFrame(animate);
-  }, [value]);
-
-  return (
-    <div className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-neutral-200/80 rounded-full text-xs font-medium text-neutral-700 shadow-sm">
-      <span className="text-inbody-red">{icon}</span>
-      <span className="font-semibold text-neutral-900 tabular-nums">{displayValue}</span>
-      <span className="text-neutral-500">{label}</span>
-    </div>
-  );
-}
-
-function StatChipSkeleton() {
-  return (
-    <div className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-neutral-200/80 rounded-full">
-      <div className="w-3 h-3 rounded-full bg-neutral-200 animate-pulse" />
-      <div className="w-16 h-3 rounded bg-neutral-200 animate-pulse" />
     </div>
   );
 }

@@ -1,233 +1,133 @@
-# Directorio InBody México · v0.4.0
+# Directorio InBody México
 
-Directorio interactivo de profesionales certificados con equipo InBody en México.
+Proyecto MKT LAB. Cliente: InBody México.
 
----
-
-## 🔥 Bloque 4: Panel Administrativo
-
-Este bloque agrega:
-
-- **Panel administrativo** completo en `/inbody-admin`
-- **Auth con correo + contraseña** + magic link como fallback
-- **Niveles de admin**: super_admin y admin
-- **Aprobar/rechazar/restaurar** profesionales con audit log
-- **Gestión de admins** desde el panel
-- **Vista de Audit Log** para super_admins
-- **RLS reactivado** de forma segura (formulario público usa Vercel Function con SERVICE_ROLE)
-- **Foto upload via API** (no directo a Storage, evita problemas RLS)
+Stack: Vite + React + Supabase + Mapbox + Resend, desplegado en Vercel.
 
 ---
 
-## 🚀 Setup completo (paso a paso)
+## 🚀 Cómo desplegar desde cero (paso a paso)
 
-### 1. Subir archivos a GitHub
+### 1) Sobreescribir el repo
 
-Sube TODO el contenido del zip al repo `InBody-Directorio/directorio-inbody` (reemplaza archivos existentes).
+Este zip contiene **TODO** el proyecto. Descomprime y reemplaza todo el contenido del repo `Rovian96/directorio-inbody` con estos archivos. Luego haz `git add -A && git commit -m "rebuild" && git push`.
 
-### 2. Variables de entorno en Vercel
+### 2) Variables de entorno en Vercel
 
-**Settings → Environment Variables**
+En Vercel → Settings → Environment Variables, asegúrate de tener TODAS estas:
 
-Agrega/verifica estas variables:
-
-| Variable | Valor | Notas |
+| Variable | Para qué sirve | Dónde sacarla |
 |---|---|---|
-| `VITE_SUPABASE_URL` | `https://xpyzjkahwbzcehsdiokk.supabase.co` | Pública, frontend |
-| `VITE_SUPABASE_ANON_KEY` | (anon key legacy `eyJ...`) | Pública, frontend |
-| `VITE_MAPBOX_TOKEN` | (tu token Mapbox) | Pública, frontend |
-| `SUPABASE_SERVICE_ROLE_KEY` | (service_role secret) | **🚨 PRIVADA, solo backend** |
-| `RESEND_API_KEY` | (tu API key de Resend) | Backend |
-| `RESEND_FROM_EMAIL` | `InBody Directorio <directorio@marketinglab.mx>` | Opcional |
-| `RESEND_TO_EMAIL` | `directorioinbody@gmail.com` | Notificaciones de nuevas solicitudes |
+| `VITE_SUPABASE_URL` | URL del proyecto Supabase | Supabase → Settings → API → Project URL |
+| `VITE_SUPABASE_ANON_KEY` | Llave pública (anónima) | Supabase → Settings → API → anon public |
+| `VITE_MAPBOX_TOKEN` | Token de Mapbox para mapas | account.mapbox.com → Access tokens |
+| `SUPABASE_SERVICE_ROLE_KEY` | Llave admin (solo backend) | Supabase → Settings → API → service_role |
+| `RESEND_API_KEY` | Para mandar correos | resend.com → API Keys |
+| `RESEND_FROM_EMAIL` | Remitente de correos (debe estar verificado en Resend) | Ej: `directorio@inbodymexico.com` |
+| `RESEND_TO_EMAIL` | Buzón que recibe notificaciones | `directorioinbody@gmail.com` |
 
-⚠️ **`SUPABASE_SERVICE_ROLE_KEY` la consigues en:** Supabase → Settings → API → "Legacy anon, service_role API keys" → service_role → Reveal → copia.
+⚠️ **Todas las `VITE_*` necesitan estar marcadas en Production + Preview + Development**.
 
-**NO le pongas el prefijo `VITE_`**, esa key SOLO va al servidor.
+### 3) Correr SQLs en Supabase (en orden)
 
-### 3. Correr el SQL del Bloque 4
+Entra a Supabase → SQL Editor y corre EN ORDEN:
 
-Supabase → SQL Editor → New query → pega TODO el contenido de `supabase/05_panel_admin.sql` → Run.
+1. `supabase/01_schema.sql` — Crea tablas `profesionales`, `ubicaciones`, storage bucket, RLS public.
+2. `supabase/05_panel_admin.sql` — Crea tablas `admins`, `audit_log`, RLS admin.
+3. `supabase/06_tanda1.sql` — Agrega columna `numero_serie`.
 
-Esto:
-- Crea tabla `admins` con los 2 super_admins iniciales
-- Crea tabla `audit_log`
-- Agrega columnas a `profesionales` (motivo_rechazo, aprobado_por, etc.)
-- Reactiva RLS con arquitectura nueva (segura, no rompe el form)
+### 4) Push a Vercel
 
-### 4. Redeploy en Vercel
+Con el push de git, Vercel auto-deploya. Esperar 1-2 min.
 
-Deployments → último → 3 puntitos → Redeploy → **desmarca cache** → confirma.
+### 5) Setup inicial de admins (solo UNA vez)
 
-Espera 2-3 min.
+Cuando Vercel termine el deploy:
 
-### 5. Setup inicial de admins en Supabase Auth
+1. Abre la URL en el navegador (ej. `https://directorio-inbody.vercel.app`)
+2. Abre la consola del navegador (F12 → Console)
+3. Pega y ejecuta:
 
-Esto crea los usuarios en Supabase Auth con sus contraseñas. **Solo se corre una vez.**
-
-Abre tu sitio en el navegador, F12 → Console y ejecuta:
-
-```javascript
-fetch('/api/admin/setup-inicial', { method: 'POST' })
-  .then(r => r.json())
-  .then(console.log);
+```js
+fetch('/api/admin/setup-inicial', {method:'POST'}).then(r=>r.json()).then(console.log)
 ```
 
-Debe responder con:
-```json
-{
-  "ok": true,
-  "message": "Setup completado...",
-  "credenciales": [
-    { "email": "directorioinbody@gmail.com", "password": "InBody2026Admin!" },
-    { "email": "rodrigo@marketinglab.mx", "password": "MktLab2026Admin!" }
-  ]
-}
-```
+Esto crea los 2 super_admins iniciales:
 
-### 6. Acceso al panel
+- `directorioinbody@gmail.com` / `InBody2026Admin!`
+- `rodrigo@marketinglab.mx` / `MktLab2026Admin!`
 
-Ve a `https://tu-sitio.vercel.app/inbody-admin`
+⚠️ **Cámbialos en cuanto entres** (Mi cuenta → Cambiar contraseña).
 
-**Credenciales iniciales:**
+### 6) Probar
 
-| Usuario | Correo | Contraseña |
-|---|---|---|
-| Equipo InBody (super_admin) | `directorioinbody@gmail.com` | `InBody2026Admin!` |
-| Rodrigo (super_admin) | `rodrigo@marketinglab.mx` | `MktLab2026Admin!` |
-
-**🚨 IMPORTANTE: Cambien la contraseña al entrar.** Vayan a "Mi cuenta" en el panel y pongan una contraseña personal.
+Entra a `/inbody-admin` y haz login con uno de los dos admins iniciales. Si todo jala, ya está listo.
 
 ---
 
-## 📂 Estructura del Bloque 4
+## 🗺️ Estructura
 
 ```
-api/
-├── registro.js              ← REESCRITO: usa SERVICE_ROLE
-├── upload-foto.js           ← NUEVO: sube foto con SERVICE_ROLE
-└── admin/
-    ├── aprobar.js
-    ├── rechazar.js
-    ├── restaurar.js
-    ├── crear-admin.js       ← Solo super_admin
-    ├── eliminar-admin.js    ← Solo super_admin
-    ├── cambiar-password.js
-    └── setup-inicial.js     ← Correr UNA vez para crear admins en Auth
-
-src/
-├── hooks/
-│   ├── useAdminAuth.js              ← NUEVO: auth + validación admins
-│   └── useProfesionalesAdmin.js     ← NUEVO: listas filtradas
-├── lib/
-│   ├── adminApi.js                  ← NUEVO: helpers para llamar APIs
-│   └── registro.js                  ← REESCRITO: usa /api/registro
-├── components/admin/
-│   ├── LoginScreen.jsx
-│   ├── AdminSidebar.jsx
-│   ├── ProfesionalDetailModal.jsx
-│   ├── ProfesionalesList.jsx
-│   ├── AdminsView.jsx
-│   ├── AuditLogView.jsx
-│   └── MiCuentaView.jsx
-└── pages/
-    └── AdminPage.jsx                ← REESCRITO con router interno
-
-supabase/
-└── 05_panel_admin.sql               ← Schema del Bloque 4
+.
+├── api/                          # Vercel Functions (backend)
+│   ├── registro.js               # POST: nuevo profesional + correo
+│   ├── upload-foto.js            # POST: sube imagen a Supabase Storage
+│   └── admin/
+│       ├── aprobar.js            # Aprobar profesional
+│       ├── rechazar.js           # Rechazar profesional
+│       ├── restaurar.js          # Restaurar rechazado a pendiente
+│       ├── crear-admin.js        # Crear nuevo admin (solo super)
+│       ├── eliminar-admin.js     # Eliminar admin (solo super)
+│       ├── cambiar-password.js   # Cambiar mi contraseña
+│       └── setup-inicial.js      # UNA VEZ: crea admins iniciales
+├── src/
+│   ├── pages/                    # HomePage, RegistroPage, AdminPage
+│   ├── components/               # Components públicos + admin/ + registro/
+│   ├── hooks/                    # useAdminAuth, useProfesionalesAdmin
+│   ├── lib/                      # supabase, mapbox, registro, adminApi, exportCSV
+│   ├── config/                   # especialidades, modelos, estados
+│   ├── App.jsx                   # Routing principal
+│   ├── main.jsx                  # Entry point
+│   └── index.css                 # Tailwind + estilos custom InBody
+├── supabase/                     # SQLs en orden
+├── public/modelos/               # Imágenes de modelos InBody (placeholder por ahora)
+├── tailwind.config.js            # Paleta oficial InBody
+├── index.html                    # Fonts Lato + Noto Sans, Mapbox CSS
+├── vite.config.js
+└── vercel.json
 ```
 
 ---
 
-## 🗺️ Rutas del panel
+## 🎨 Branding
 
-| Ruta | Quién puede | Qué hace |
-|---|---|---|
-| `/inbody-admin` | Todos los admins | Redirige a pendientes |
-| `/inbody-admin/pendientes` | Todos los admins | Lista pendientes con badge |
-| `/inbody-admin/aprobados` | Todos los admins | Lista aprobados |
-| `/inbody-admin/rechazados` | Todos los admins | Lista rechazados (con restaurar) |
-| `/inbody-admin/administradores` | Solo super_admin | Gestión de admins |
-| `/inbody-admin/audit-log` | Solo super_admin | Historial de acciones |
-| `/inbody-admin/mi-cuenta` | Todos los admins | Cambiar propia contraseña |
+Colores y fuentes vienen del brandbook oficial InBody v1.0.1:
+
+- **InBody Red**: `#971B2F` (PANTONE 7427C)
+- **Pin del mapa**: `#E31937` (más brillante para visibilidad)
+- **Tipografía**: Lato (display/títulos) + Noto Sans (cuerpo)
+- **Regla**: rojo máximo 10% del área total
 
 ---
 
-## 🔐 Arquitectura de seguridad
+## 📋 Pendientes conocidos
 
-```
-┌────────────────────────────────────────────────────────┐
-│  Frontend público                                       │
-│  - Lee profesionales aprobados con anon key            │
-│  - NO toca Supabase directo para INSERT                │
-│  - Manda fotos via /api/upload-foto (con SERVICE_ROLE) │
-│  - Manda registro via /api/registro (con SERVICE_ROLE) │
-└────────────────────────────────────────────────────────┘
-                       │
-                       ▼
-┌────────────────────────────────────────────────────────┐
-│  Vercel Functions (backend)                            │
-│  - Tienen SERVICE_ROLE_KEY (nunca llega al navegador)  │
-│  - Validan datos antes de tocar Supabase               │
-│  - Hacen INSERT con permisos completos                 │
-└────────────────────────────────────────────────────────┘
-                       │
-                       ▼
-┌────────────────────────────────────────────────────────┐
-│  Supabase (RLS activado)                               │
-│  - anon: SOLO SELECT en profesionales aprobados        │
-│  - authenticated (admin logueado): puede todo          │
-│  - service_role (backend): bypassa RLS                 │
-└────────────────────────────────────────────────────────┘
-```
+- [ ] Imágenes oficiales de los modelos InBody (subir a `/public/modelos/{id}.png`). Por ahora todos muestran un placeholder elegante con gradiente rojo.
+- [ ] Lista de modelos descontinuados (pendiente que InBody mande la lista).
+- [ ] DNS `directorio.inbodymexico.com` (pendiente IT InBody).
+- [ ] Configurar dominio verificado en Resend para el `RESEND_FROM_EMAIL`.
 
 ---
 
-## 🛠️ Troubleshooting
+## 🐛 Si el build falla en Vercel
 
-### "Error creando profesional: new row violates RLS"
-Pasó porque `SUPABASE_SERVICE_ROLE_KEY` no está bien configurada en Vercel. Verifica que existe y tiene el valor correcto.
-
-### "Sesión inválida" al entrar al panel
-Tu token expiró. Cierra sesión y vuelve a entrar.
-
-### "No tienes permisos de administrador"
-Tu correo no está en la tabla `admins` de Supabase, o no corriste `setup-inicial`. Vuelve a correr:
-```javascript
-fetch('/api/admin/setup-inicial', { method: 'POST' }).then(r => r.json()).then(console.log);
-```
-
-### El correo no llega cuando rechazo/apruebo
-Revisa que `RESEND_API_KEY` esté en Vercel y que el dominio `marketinglab.mx` esté verificado en Resend.
+1. Ver el log completo en Vercel → Deployment → tab **"Logs"** (no Runtime Logs, sino el log del build).
+2. Si la pestaña Logs aparece vacía, prueba abrir directamente la URL del deployment fallido y agregarle `?expand-logs` al final.
+3. Los errores más comunes son:
+   - Variable de entorno `VITE_*` faltante → revisa paso 2.
+   - SQL no ejecutado → revisa paso 3.
+   - Bucket de Storage `directorio-fotos` no creado → corre `01_schema.sql` (lo crea automático).
 
 ---
 
-## 📋 Checklist post-deploy
-
-- [ ] Variables de entorno en Vercel completas (especialmente `SUPABASE_SERVICE_ROLE_KEY`)
-- [ ] SQL `05_panel_admin.sql` ejecutado
-- [ ] Redeploy SIN cache hecho
-- [ ] `/api/admin/setup-inicial` ejecutado una vez
-- [ ] Login con `directorioinbody@gmail.com` / `InBody2026Admin!` funciona
-- [ ] Login con `rodrigo@marketinglab.mx` / `MktLab2026Admin!` funciona
-- [ ] Contraseñas iniciales cambiadas desde "Mi cuenta"
-- [ ] Probaste aprobar una solicitud pendiente → llegó correo verde "¡Estás dentro!" al doctor
-- [ ] Probaste rechazar con motivo → llegó correo al doctor
-- [ ] Probaste restaurar un rechazo → volvió a pendientes
-- [ ] El formulario público sigue funcionando con RLS activado
-
----
-
-## 🎯 Próximos pasos (Bloque 5)
-
-- DNS: apuntar `directorio.inbodymexico.com` al deploy de Vercel
-- Pulir errores cosméticos
-- Optimizaciones de performance
-- Analytics opcional
-- Handoff a Aza
-
----
-
-## 📞 Soporte
-
-Para dudas técnicas, contactar a Rodrigo Vázquez · MKT LAB.
+Hecho con cariño por Rodrigo + Claude para que Aza pueda dormir tranquila. 🛌

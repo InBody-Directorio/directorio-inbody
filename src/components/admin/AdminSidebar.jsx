@@ -1,150 +1,74 @@
-import { Link, useLocation } from 'react-router-dom';
-import { Inbox, CheckCircle2, XCircle, Users, FileText, LogOut, Shield, User } from 'lucide-react';
+import { NavLink } from 'react-router-dom';
+import { Inbox, CheckCircle2, XCircle, Users, FileText, User, LogOut } from 'lucide-react';
 import InBodyLogo from '../InBodyLogo.jsx';
 
 export default function AdminSidebar({ admin, pendientesCount, onLogout }) {
-  const location = useLocation();
-  const path = location.pathname;
-
-  const items = [
-    {
-      to: '/inbody-admin/pendientes',
-      label: 'Pendientes',
-      icon: <Inbox className="w-4 h-4" />,
-      badge: pendientesCount,
-    },
-    {
-      to: '/inbody-admin/aprobados',
-      label: 'Aprobados',
-      icon: <CheckCircle2 className="w-4 h-4" />,
-    },
-    {
-      to: '/inbody-admin/rechazados',
-      label: 'Rechazados',
-      icon: <XCircle className="w-4 h-4" />,
-    },
-  ];
-
-  const adminItems = [
-    {
-      to: '/inbody-admin/administradores',
-      label: 'Administradores',
-      icon: <Users className="w-4 h-4" />,
-      onlySuperAdmin: true,
-    },
-    {
-      to: '/inbody-admin/audit-log',
-      label: 'Audit log',
-      icon: <FileText className="w-4 h-4" />,
-      onlySuperAdmin: true,
-    },
-  ];
+  const isSuperAdmin = admin && admin.nivel === 'super_admin';
 
   return (
-    <aside className="w-64 bg-white border-r border-neutral-200 flex flex-col h-screen sticky top-0">
-      <div className="p-5 border-b border-neutral-150 flex items-center gap-2.5">
-        <InBodyLogo size={20} className="text-inbody-red" />
-        <div className="text-[10px] uppercase tracking-[0.14em] text-neutral-500 font-semibold leading-tight">
-          Panel<br/>Administrativo
+    <aside className="w-56 md:w-64 bg-white border-r border-neutral-200 flex flex-col flex-shrink-0 min-h-screen">
+      <div className="p-5 border-b border-neutral-200">
+        <div className="flex items-center gap-2.5">
+          <InBodyLogo className="h-7 w-auto text-inbody-red" />
+          <div>
+            <div className="text-[9px] uppercase tracking-[0.14em] text-neutral-500 font-semibold leading-tight">Panel</div>
+            <div className="text-[9px] uppercase tracking-[0.14em] text-neutral-900 font-semibold leading-tight">Administrativo</div>
+          </div>
         </div>
       </div>
 
-      <nav className="flex-1 px-3 py-5 overflow-y-auto">
-        <div className="text-[10px] uppercase tracking-wider text-neutral-400 font-semibold px-3 mb-2">
-          Profesionales
-        </div>
-        <div className="space-y-0.5 mb-6">
-          {items.map(function (item) {
-            const active = path === item.to || (item.to === '/inbody-admin/pendientes' && path === '/inbody-admin');
-            return (
-              <Link
-                key={item.to}
-                to={item.to}
-                className={
-                  'flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-colors ' +
-                  (active
-                    ? 'bg-inbody-red-soft text-inbody-red-dark font-medium'
-                    : 'text-neutral-700 hover:bg-neutral-100')
-                }
-              >
-                <span className="flex items-center gap-2.5">
-                  {item.icon}
-                  {item.label}
-                </span>
-                {item.badge > 0 && (
-                  <span className="inline-flex items-center justify-center min-w-[20px] h-[18px] px-1.5 rounded-full bg-inbody-red text-white text-[10px] font-semibold tabular-nums">
-                    {item.badge}
-                  </span>
-                )}
-              </Link>
-            );
-          })}
-        </div>
+      <nav className="flex-1 p-3 space-y-0.5 overflow-y-auto">
+        <div className="px-3 py-2 text-[9px] uppercase tracking-[0.14em] text-neutral-400 font-semibold">Profesionales</div>
+        <NavItem to="/inbody-admin/pendientes" icon={Inbox} label="Pendientes" badge={pendientesCount} />
+        <NavItem to="/inbody-admin/aprobados" icon={CheckCircle2} label="Aprobados" />
+        <NavItem to="/inbody-admin/rechazados" icon={XCircle} label="Rechazados" />
 
-        {admin && admin.nivel === 'super_admin' && (
+        {isSuperAdmin && (
           <>
-            <div className="text-[10px] uppercase tracking-wider text-neutral-400 font-semibold px-3 mb-2">
-              Sistema
-            </div>
-            <div className="space-y-0.5">
-              {adminItems.map(function (item) {
-                const active = path === item.to;
-                return (
-                  <Link
-                    key={item.to}
-                    to={item.to}
-                    className={
-                      'flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors ' +
-                      (active
-                        ? 'bg-inbody-red-soft text-inbody-red-dark font-medium'
-                        : 'text-neutral-700 hover:bg-neutral-100')
-                    }
-                  >
-                    {item.icon}
-                    {item.label}
-                  </Link>
-                );
-              })}
-            </div>
+            <div className="px-3 py-2 mt-3 text-[9px] uppercase tracking-[0.14em] text-neutral-400 font-semibold">Sistema</div>
+            <NavItem to="/inbody-admin/administradores" icon={Users} label="Administradores" />
+            <NavItem to="/inbody-admin/audit-log" icon={FileText} label="Audit log" />
           </>
         )}
       </nav>
 
-      <div className="p-3 border-t border-neutral-150">
-        <Link
-          to="/inbody-admin/mi-cuenta"
-          className="flex items-center gap-3 p-3 rounded-xl hover:bg-neutral-100 transition-colors mb-2"
-        >
-          <div className="w-9 h-9 rounded-full bg-gradient-to-br from-inbody-red to-inbody-red-dark flex items-center justify-center text-white font-semibold text-sm flex-shrink-0">
-            {admin && admin.nombre ? admin.nombre.charAt(0).toUpperCase() : 'A'}
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="text-xs font-medium text-neutral-900 truncate">
-              {admin && admin.nombre ? admin.nombre : 'Admin'}
-            </div>
-            <div className="flex items-center gap-1 text-[10px] text-neutral-500">
-              {admin && admin.nivel === 'super_admin' ? (
-                <>
-                  <Shield className="w-2.5 h-2.5" />
-                  Super Admin
-                </>
-              ) : (
-                <>
-                  <User className="w-2.5 h-2.5" />
-                  Admin
-                </>
-              )}
-            </div>
-          </div>
-        </Link>
+      <div className="p-3 border-t border-neutral-200 space-y-0.5">
+        <NavItem to="/inbody-admin/mi-cuenta" icon={User} label="Mi cuenta" />
         <button
           onClick={onLogout}
-          className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs text-neutral-600 hover:bg-neutral-100 hover:text-inbody-red transition-colors"
+          className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs text-neutral-700 hover:bg-inbody-red-soft hover:text-inbody-red transition-colors"
         >
           <LogOut className="w-3.5 h-3.5" />
           Cerrar sesión
         </button>
+        {admin && (
+          <div className="px-3 pt-2 text-[10px] text-neutral-400 leading-tight border-t border-neutral-100 mt-2">
+            <div className="font-medium text-neutral-700 truncate">{admin.email}</div>
+            <div className="uppercase tracking-wider text-inbody-red">{admin.nivel === 'super_admin' ? 'Super Admin' : 'Admin'}</div>
+          </div>
+        )}
       </div>
     </aside>
+  );
+}
+
+function NavItem({ to, icon: Icon, label, badge }) {
+  return (
+    <NavLink
+      to={to}
+      end
+      className={function (state) {
+        return 'flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs transition-colors ' +
+          (state.isActive
+            ? 'bg-inbody-red-soft text-inbody-red font-semibold'
+            : 'text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900');
+      }}
+    >
+      <Icon className="w-3.5 h-3.5" />
+      <span className="flex-1">{label}</span>
+      {badge && badge > 0 && (
+        <span className="text-[10px] font-bold bg-inbody-red text-white px-1.5 py-0.5 rounded-full">{badge}</span>
+      )}
+    </NavLink>
   );
 }

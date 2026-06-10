@@ -1,93 +1,57 @@
 import { supabase } from './supabase.js';
 
 async function getAccessToken() {
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session) throw new Error('No hay sesión activa');
-  return session.access_token;
+  const { data } = await supabase.auth.getSession();
+  return data.session ? data.session.access_token : null;
 }
 
-export async function aprobarProfesional(profesionalId) {
-  const token = await getAccessToken();
-  const { data: { user } } = await supabase.auth.getUser();
-  const res = await fetch('/api/admin/aprobar', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ profesionalId, adminEmail: user.email, accessToken: token }),
-  });
-  if (!res.ok) {
-    const err = await res.json().catch(function () { return {}; });
-    throw new Error(err.error || 'Error al aprobar');
-  }
-  return await res.json();
+async function getAdminEmail() {
+  const { data } = await supabase.auth.getUser();
+  return data.user ? data.user.email : null;
 }
 
-export async function rechazarProfesional(profesionalId, motivo) {
-  const token = await getAccessToken();
-  const { data: { user } } = await supabase.auth.getUser();
-  const res = await fetch('/api/admin/rechazar', {
+async function callAdminApi(endpoint, body) {
+  const accessToken = await getAccessToken();
+  const adminEmail = await getAdminEmail();
+
+  if (!accessToken || !adminEmail) {
+    throw new Error('Sesión expirada. Vuelve a iniciar sesión.');
+  }
+
+  const res = await fetch('/api/admin/' + endpoint, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ profesionalId, adminEmail: user.email, accessToken: token, motivo }),
+    body: JSON.stringify({ ...body, accessToken: accessToken, adminEmail: adminEmail }),
   });
+
   if (!res.ok) {
-    const err = await res.json().catch(function () { return {}; });
-    throw new Error(err.error || 'Error al rechazar');
+    const err = await res.json().catch(function () { return { error: 'Error desconocido' }; });
+    throw new Error(err.error || 'Error en la operación');
   }
-  return await res.json();
+
+  return res.json();
 }
 
-export async function restaurarProfesional(profesionalId) {
-  const token = await getAccessToken();
-  const res = await fetch('/api/admin/restaurar', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ profesionalId, accessToken: token }),
-  });
-  if (!res.ok) {
-    const err = await res.json().catch(function () { return {}; });
-    throw new Error(err.error || 'Error al restaurar');
-  }
-  return await res.json();
+export function aprobarProfesional(profesionalId) {
+  return callAdminApi('aprobar', { profesionalId: profesionalId });
 }
 
-export async function crearAdmin(email, password, nombre, nivel) {
-  const token = await getAccessToken();
-  const res = await fetch('/api/admin/crear-admin', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, password, nombre, nivel, accessToken: token }),
-  });
-  if (!res.ok) {
-    const err = await res.json().catch(function () { return {}; });
-    throw new Error(err.error || 'Error al crear admin');
-  }
-  return await res.json();
+export function rechazarProfesional(profesionalId, motivo) {
+  return callAdminApi('rechazar', { profesionalId: profesionalId, motivo: motivo });
 }
 
-export async function eliminarAdmin(adminId) {
-  const token = await getAccessToken();
-  const res = await fetch('/api/admin/eliminar-admin', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ adminId, accessToken: token }),
-  });
-  if (!res.ok) {
-    const err = await res.json().catch(function () { return {}; });
-    throw new Error(err.error || 'Error al eliminar admin');
-  }
-  return await res.json();
+export function restaurarProfesional(profesionalId) {
+  return callAdminApi('restaurar', { profesionalId: profesionalId });
 }
 
-export async function cambiarPassword(newPassword, targetEmail) {
-  const token = await getAccessToken();
-  const res = await fetch('/api/admin/cambiar-password', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ newPassword, targetEmail, accessToken: token }),
-  });
-  if (!res.ok) {
-    const err = await res.json().catch(function () { return {}; });
-    throw new Error(err.error || 'Error al cambiar contraseña');
-  }
-  return await res.json();
+export function crearAdmin(email, nombre, nivel) {
+  return callAdminApi('crear-admin', { email: email, nombre: nombre, nivel: nivel });
+}
+
+export function eliminarAdmin(adminId) {
+  return callAdminApi('eliminar-admin', { adminId: adminId });
+}
+
+export function cambiarPassword(currentPassword, newPassword) {
+  return callAdminApi('cambiar-password', { currentPassword: currentPassword, newPassword: newPassword });
 }
