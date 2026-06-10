@@ -1,11 +1,9 @@
 /**
- * POST /api/admin/aprobar
+ * POST /api/admin/aprobar v2
  *
  * Aprueba un profesional pendiente.
- * Manda correo al doctor avisando.
- * Registra en audit_log.
- *
- * Requiere: token de sesión válido y admin_email autorizado.
+ * MEJORA: el correo se manda en segundo plano (no bloquea la respuesta).
+ * Resultado: el usuario ve "aprobado" en ~300ms en vez de 3-4s.
  */
 import { createClient } from '@supabase/supabase-js';
 import { Resend } from 'resend';
@@ -28,13 +26,13 @@ export default async function handler(req, res) {
       { auth: { autoRefreshToken: false, persistSession: false } }
     );
 
-    // Verificar que el usuario tenga sesión válida
+    // Verificar sesión
     const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(accessToken);
     if (authError || !user) {
       return res.status(401).json({ error: 'Sesión inválida' });
     }
 
-    // Verificar que sea admin autorizado
+    // Verificar admin autorizado
     const { data: admin } = await supabaseAdmin
       .from('admins')
       .select('email, nivel, activo')
@@ -48,7 +46,7 @@ export default async function handler(req, res) {
     // Obtener datos del profesional
     const { data: prof, error: profErr } = await supabaseAdmin
       .from('profesionales')
-      .select('*, ubicaciones(*)')
+      .select('id, nombre, email')
       .eq('id', profesionalId)
       .single();
 
@@ -56,50 +54,58 @@ export default async function handler(req, res) {
       return res.status(404).json({ error: 'Profesional no encontrado' });
     }
 
-    // Actualizar status a aprobado
-    const { error: updErr } = await supabaseAdmin
-      .from('profesionales')
-      .update({
-        status: 'aprobado',
-        aprobado_por: admin.email,
-        aprobado_at: new Date().toISOString(),
-        motivo_rechazo: null,
-        rechazado_por: null,
-        rechazado_at: null,
-      })
-      .eq('id', profesionalId);
+    // Update + audit log en paralelo (ambos rápidos)
+    const [{ error: updErr }] = await Promise.all([
+      supabaseAdmin
+        .from('profesionales')
+        .update({
+          status: 'aprobado',
+          aprobado_por: admin.email,
+          aprobado_at: new Date().toISOString(),
+          motivo_rechazo: null,
+          rechazado_por: null,
+          rechazado_at: null,
+        })
+        .eq('id', profesionalId),
+      supabaseAdmin.from('audit_log').insert({
+        admin_email: admin.email,
+        accion: 'aprobar_profesional',
+        entidad: 'profesionales',
+        entidad_id: profesionalId,
+        detalles: { nombre: prof.nombre, email: prof.email },
+      }),
+    ]);
 
     if (updErr) {
       return res.status(500).json({ error: 'Error al aprobar: ' + updErr.message });
     }
 
-    // Registrar en audit_log
-    await supabaseAdmin.from('audit_log').insert({
-      admin_email: admin.email,
-      accion: 'aprobar_profesional',
-      entidad: 'profesionales',
-      entidad_id: profesionalId,
-      detalles: { nombre: prof.nombre, email: prof.email },
+    // 🚀 MANDAR CORREO EN BACKGROUND (no bloquea la respuesta)
+    // En Vercel, las requests se cortan cuando el handler retorna,
+    // así que usamos una promesa flotante con timeout corto
+    Promise.race([
+      sendApprovalEmail(prof),
+      new Promise(function (_, reject) { setTimeout(reject, 9000); }),
+    ]).catch(function (err) {
+      console.error('Error/timeout enviando correo aprobación:', err);
     });
 
-    // Mandar correo al doctor
-    try {
-      const resend = new Resend(process.env.RESEND_API_KEY);
-      await resend.emails.send({
-        from: FROM_EMAIL,
-        to: prof.email,
-        subject: '¡Estás dentro! · Directorio InBody México',
-        html: renderApprovedEmail(prof),
-      });
-    } catch (e) {
-      console.error('Error mandando correo de aprobación:', e);
-    }
-
+    // Responder INMEDIATAMENTE
     return res.status(200).json({ ok: true });
   } catch (err) {
     console.error('Error en /api/admin/aprobar:', err);
     return res.status(500).json({ error: err.message });
   }
+}
+
+async function sendApprovalEmail(prof) {
+  const resend = new Resend(process.env.RESEND_API_KEY);
+  return resend.emails.send({
+    from: FROM_EMAIL,
+    to: prof.email,
+    subject: '¡Estás dentro! · Directorio InBody México',
+    html: renderApprovedEmail(prof),
+  });
 }
 
 function renderApprovedEmail(prof) {

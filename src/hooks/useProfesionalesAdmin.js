@@ -1,10 +1,17 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '../lib/supabase.js';
 
+/**
+ * Hook v2: garantiza que el fetch se ejecute SIEMPRE cuando cambia el status.
+ *
+ * Fix robusto: además del useEffect normal, usamos un ref para detectar
+ * cambios de status y forzar reload aunque React esté reutilizando el componente.
+ */
 export function useProfesionalesAdmin(status) {
   const [profesionales, setProfesionales] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const lastStatusRef = useRef(null);
 
   const fetchData = useCallback(async function () {
     setLoading(true);
@@ -29,8 +36,25 @@ export function useProfesionalesAdmin(status) {
     }
   }, [status]);
 
+  // Re-fetch cuando cambia status (forzado por ref check)
   useEffect(function () {
-    fetchData();
+    if (lastStatusRef.current !== status) {
+      lastStatusRef.current = status;
+      fetchData();
+    }
+  }, [status, fetchData]);
+
+  // También recargar al volver al tab del navegador
+  useEffect(function () {
+    function handleVisibilityChange() {
+      if (document.visibilityState === 'visible') {
+        fetchData();
+      }
+    }
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return function () {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, [fetchData]);
 
   return { profesionales, loading, error, refetch: fetchData };

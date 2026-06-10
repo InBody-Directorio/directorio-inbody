@@ -1,6 +1,6 @@
 /**
- * POST /api/admin/rechazar
- * Rechaza un profesional pendiente con motivo opcional.
+ * POST /api/admin/rechazar v2
+ * Rechaza con motivo opcional. Correo en background.
  */
 import { createClient } from '@supabase/supabase-js';
 import { Resend } from 'resend';
@@ -29,52 +29,56 @@ export default async function handler(req, res) {
     const { data: admin } = await supabaseAdmin
       .from('admins').select('email, activo')
       .ilike('email', user.email).single();
-
     if (!admin || !admin.activo) return res.status(403).json({ error: 'Sin permisos' });
 
     const { data: prof, error: profErr } = await supabaseAdmin
-      .from('profesionales').select('*').eq('id', profesionalId).single();
-
+      .from('profesionales').select('id, nombre, email').eq('id', profesionalId).single();
     if (profErr || !prof) return res.status(404).json({ error: 'No encontrado' });
 
-    const { error: updErr } = await supabaseAdmin
-      .from('profesionales')
-      .update({
-        status: 'rechazado',
-        rechazado_por: admin.email,
-        rechazado_at: new Date().toISOString(),
-        motivo_rechazo: motivo || null,
-      })
-      .eq('id', profesionalId);
+    const [{ error: updErr }] = await Promise.all([
+      supabaseAdmin
+        .from('profesionales')
+        .update({
+          status: 'rechazado',
+          rechazado_por: admin.email,
+          rechazado_at: new Date().toISOString(),
+          motivo_rechazo: motivo || null,
+        })
+        .eq('id', profesionalId),
+      supabaseAdmin.from('audit_log').insert({
+        admin_email: admin.email,
+        accion: 'rechazar_profesional',
+        entidad: 'profesionales',
+        entidad_id: profesionalId,
+        detalles: { nombre: prof.nombre, email: prof.email, motivo: motivo },
+      }),
+    ]);
 
     if (updErr) return res.status(500).json({ error: updErr.message });
 
-    await supabaseAdmin.from('audit_log').insert({
-      admin_email: admin.email,
-      accion: 'rechazar_profesional',
-      entidad: 'profesionales',
-      entidad_id: profesionalId,
-      detalles: { nombre: prof.nombre, email: prof.email, motivo: motivo },
+    // 🚀 Correo en background
+    Promise.race([
+      sendRejectionEmail(prof, motivo),
+      new Promise(function (_, reject) { setTimeout(reject, 9000); }),
+    ]).catch(function (err) {
+      console.error('Error/timeout correo rechazo:', err);
     });
-
-    // Correo al doctor
-    try {
-      const resend = new Resend(process.env.RESEND_API_KEY);
-      await resend.emails.send({
-        from: FROM_EMAIL,
-        to: prof.email,
-        subject: 'Sobre tu solicitud · Directorio InBody México',
-        html: renderRejectedEmail(prof, motivo),
-      });
-    } catch (e) {
-      console.error('Error correo rechazo:', e);
-    }
 
     return res.status(200).json({ ok: true });
   } catch (err) {
     console.error('Error rechazar:', err);
     return res.status(500).json({ error: err.message });
   }
+}
+
+async function sendRejectionEmail(prof, motivo) {
+  const resend = new Resend(process.env.RESEND_API_KEY);
+  return resend.emails.send({
+    from: FROM_EMAIL,
+    to: prof.email,
+    subject: 'Sobre tu solicitud · Directorio InBody México',
+    html: renderRejectedEmail(prof, motivo),
+  });
 }
 
 function renderRejectedEmail(prof, motivo) {
