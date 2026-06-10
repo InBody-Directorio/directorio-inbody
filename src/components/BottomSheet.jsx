@@ -1,9 +1,10 @@
 import { useState, useRef, useEffect } from 'react';
-import ProfesionalCard, { ProfesionalCardSkeleton } from './ProfesionalCard.jsx';
+import { Loader2 } from 'lucide-react';
+import ProfesionalCard from './ProfesionalCard.jsx';
 
-const SNAP_PEEK = 100;
-const SNAP_HALF = 0.45;
-const SNAP_FULL = 0.88;
+const SNAP_PEEK = 100; // px desde abajo (solo handle visible)
+const SNAP_HALF = 0.45; // 45% del viewport
+const SNAP_FULL = 0.88; // 88% del viewport
 
 export default function BottomSheet({ profesionales, loading, selectedId, onSelect }) {
   const [translateY, setTranslateY] = useState(0);
@@ -13,6 +14,7 @@ export default function BottomSheet({ profesionales, loading, selectedId, onSele
   const dragStart = useRef(null);
   const initialTranslate = useRef(0);
 
+  // Calcular posiciones reales en px
   function getSnapPositions() {
     const vh = typeof window !== 'undefined' ? window.innerHeight : 800;
     return {
@@ -22,6 +24,7 @@ export default function BottomSheet({ profesionales, loading, selectedId, onSele
     };
   }
 
+  // Setear posición inicial al cargar
   useEffect(function () {
     const positions = getSnapPositions();
     setTranslateY(positions.half);
@@ -43,8 +46,11 @@ export default function BottomSheet({ profesionales, loading, selectedId, onSele
   function handleEnd() {
     if (!isDragging) return;
     setIsDragging(false);
+
     const positions = getSnapPositions();
     const current = translateY;
+
+    // Determinar snap más cercano
     const distances = {
       peek: Math.abs(current - positions.peek),
       half: Math.abs(current - positions.half),
@@ -53,11 +59,13 @@ export default function BottomSheet({ profesionales, loading, selectedId, onSele
     const closest = Object.keys(distances).reduce(function (a, b) {
       return distances[a] < distances[b] ? a : b;
     });
+
     setTranslateY(positions[closest]);
     setSnapPoint(closest);
     dragStart.current = null;
   }
 
+  // Auto-expand cuando se selecciona un profesional
   useEffect(
     function () {
       if (selectedId && snapPoint === 'peek') {
@@ -76,12 +84,11 @@ export default function BottomSheet({ profesionales, loading, selectedId, onSele
       style={{
         height: '100vh',
         transform: 'translateY(' + translateY + 'px)',
-        transition: isDragging
-          ? 'none'
-          : 'transform 0.32s cubic-bezier(0.2, 0.9, 0.3, 1)',
-        boxShadow: '0 -4px 24px rgba(0,0,0,0.12)',
+        transition: isDragging ? 'none' : 'transform 0.32s cubic-bezier(0.2, 0.9, 0.3, 1)',
+        boxShadow: '0 -4px 24px rgba(0,0,0,0.08)',
       }}
     >
+      {/* Drag handle */}
       <div
         className="flex flex-col items-center pt-2 pb-3 cursor-grab active:cursor-grabbing select-none"
         onMouseDown={function (e) {
@@ -101,23 +108,17 @@ export default function BottomSheet({ profesionales, loading, selectedId, onSele
         onTouchEnd={handleEnd}
       >
         <div className="w-10 h-1 rounded-full bg-neutral-300 mb-3" />
-        <div className="text-xs font-medium text-neutral-900 tabular-nums">
-          {loading
-            ? 'Cargando...'
-            : profesionales.length +
-              ' profesional' +
-              (profesionales.length === 1 ? '' : 'es')}
+        <div className="text-xs font-medium text-neutral-900">
+          {loading ? 'Cargando...' : profesionales.length + ' profesional' + (profesionales.length === 1 ? '' : 'es')}
         </div>
       </div>
 
+      {/* Scrollable list */}
       <div className="flex-1 overflow-y-auto overscroll-contain">
         {loading ? (
-          <>
-            <ProfesionalCardSkeleton />
-            <ProfesionalCardSkeleton />
-            <ProfesionalCardSkeleton />
-            <ProfesionalCardSkeleton />
-          </>
+          <div className="flex items-center justify-center py-12 text-neutral-400">
+            <Loader2 className="w-5 h-5 animate-spin" />
+          </div>
         ) : profesionales.length === 0 ? (
           <div className="text-center py-12 px-8 text-neutral-500 text-sm">
             Sin resultados. Ajusta los filtros.
