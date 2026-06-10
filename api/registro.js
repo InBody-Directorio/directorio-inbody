@@ -11,6 +11,14 @@ import { Resend } from 'resend';
 const TO_EMAIL_TEAM = process.env.RESEND_TO_EMAIL || 'directorioinbody@gmail.com';
 const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || 'InBody Directorio <directorio@marketinglab.mx>';
 
+// Colores InBody oficiales del brandbook
+const COLOR_RED = '#971B2F';
+const COLOR_BLACK = '#101820';
+const COLOR_DARK_GRAY = '#4B4F5A';
+const COLOR_COOL_GRAY = '#67767F';
+const COLOR_RED_SOFT = '#f9eaec';
+const COLOR_BG = '#fafaf7';
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
@@ -130,7 +138,6 @@ export default async function handler(req, res) {
     const protocol = req.headers['x-forwarded-proto'] || 'https';
     const adminUrl = `${protocol}://${host}/inbody-admin/pendientes`;
 
-    // Correos en background (no bloquean respuesta)
     Promise.race([
       Promise.all([
         resend.emails.send({
@@ -158,71 +165,76 @@ export default async function handler(req, res) {
   }
 }
 
+// Fuente CSS embebida para emails: Lato + Noto Sans
+const FONT_LINK = `<link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&family=Noto+Sans:wght@400;500;600&display=swap" rel="stylesheet">`;
+const FONT_STACK = `'Noto Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif`;
+const DISPLAY_FONT_STACK = `'Lato', 'Noto Sans', -apple-system, sans-serif`;
+
 function renderTeamEmail(data) {
   const ubicaciones = (data.ubicaciones || []).map(function (u, i) {
-    return `<tr><td style="padding:8px 0;border-bottom:1px solid #eee;font-size:13px;color:#5c5c60;">
-      <strong style="color:#18181a;">Ubicación ${i + 1}:</strong> ${escapeHTML(u.direccion_completa || '')}, ${escapeHTML(u.ciudad || '')}, ${escapeHTML(u.estado || '')}
+    return `<tr><td style="padding:8px 0;border-bottom:1px solid #eee;font-size:13px;color:${COLOR_COOL_GRAY};">
+      <strong style="color:${COLOR_BLACK};">Ubicación ${i + 1}:</strong> ${escapeHTML(u.direccion_completa || '')}, ${escapeHTML(u.ciudad || '')}, ${escapeHTML(u.estado || '')}
       ${u.codigo_postal ? '<br/><span style="font-size:11px;">CP ' + escapeHTML(u.codigo_postal) + '</span>' : ''}
       ${(u.lat && u.lng) ? '<br/><span style="font-size:11px;color:#1d9e75;">✓ Geocodificada</span>' : '<br/><span style="font-size:11px;color:#d85a30;">⚠ Sin geocodificar (revisar manualmente)</span>'}
     </td></tr>`;
   }).join('');
 
-  return `<!DOCTYPE html><html><head><meta charset="UTF-8"/></head>
-<body style="margin:0;padding:0;background:#f5f4f0;font-family:-apple-system,sans-serif;">
+  return `<!DOCTYPE html><html><head><meta charset="UTF-8"/>${FONT_LINK}</head>
+<body style="margin:0;padding:0;background:${COLOR_BG};font-family:${FONT_STACK};">
 <table width="100%" cellpadding="0" cellspacing="0" style="padding:40px 16px;"><tr><td align="center">
-<table width="600" cellpadding="0" cellspacing="0" style="background:white;border-radius:16px;overflow:hidden;box-shadow:0 4px 16px rgba(0,0,0,0.04);">
-<tr><td style="background:#971B2F;padding:24px 32px;">
+<table width="600" cellpadding="0" cellspacing="0" style="background:white;border-radius:16px;overflow:hidden;box-shadow:0 4px 16px rgba(16,24,32,0.06);">
+<tr><td style="background:${COLOR_RED};padding:24px 32px;">
   <div style="color:white;font-size:11px;font-weight:600;letter-spacing:0.15em;text-transform:uppercase;opacity:0.9;">Directorio InBody · México</div>
-  <div style="color:white;font-size:22px;font-weight:600;margin-top:8px;">Nueva solicitud de registro</div>
+  <div style="color:white;font-size:22px;font-weight:700;margin-top:8px;font-family:${DISPLAY_FONT_STACK};">Nueva solicitud de registro</div>
 </td></tr>
 <tr><td style="padding:32px;">
-  <p style="margin:0 0 24px;font-size:14px;color:#5c5c60;line-height:1.6;">
+  <p style="margin:0 0 24px;font-size:14px;color:${COLOR_COOL_GRAY};line-height:1.6;">
     Llegó una nueva solicitud de registro al directorio. Revisen los datos y aprueben o rechacen desde el panel.
   </p>
-  <div style="background:#fafaf7;border-radius:12px;padding:20px;margin-bottom:16px;">
-    <div style="font-size:11px;font-weight:600;color:#971B2F;letter-spacing:0.12em;text-transform:uppercase;margin-bottom:12px;">Profesional</div>
+  <div style="background:${COLOR_BG};border-radius:12px;padding:20px;margin-bottom:16px;">
+    <div style="font-size:11px;font-weight:600;color:${COLOR_RED};letter-spacing:0.12em;text-transform:uppercase;margin-bottom:12px;">Profesional</div>
     <table width="100%" style="font-size:13px;">
-      <tr><td style="padding:6px 0;color:#5c5c60;width:140px;">Nombre:</td><td style="padding:6px 0;color:#18181a;font-weight:500;">${escapeHTML(data.nombre)}</td></tr>
-      <tr><td style="padding:6px 0;color:#5c5c60;">Categoría:</td><td style="padding:6px 0;color:#18181a;">${escapeHTML(data.especialidad_label || data.especialidad)}</td></tr>
-      <tr><td style="padding:6px 0;color:#5c5c60;">Modelo InBody:</td><td style="padding:6px 0;color:#18181a;">${escapeHTML(data.modelo_inbody_label || data.modelo_inbody)}</td></tr>
-      <tr><td style="padding:6px 0;color:#5c5c60;">Núm. serie:</td><td style="padding:6px 0;color:#18181a;font-family:Menlo,monospace;font-weight:600;">${escapeHTML(data.numero_serie || '—')}</td></tr>
-      ${data.descripcion_breve ? `<tr><td style="padding:6px 0;color:#5c5c60;vertical-align:top;">Descripción:</td><td style="padding:6px 0;color:#18181a;line-height:1.5;">${escapeHTML(data.descripcion_breve)}</td></tr>` : ''}
+      <tr><td style="padding:6px 0;color:${COLOR_COOL_GRAY};width:140px;">Nombre:</td><td style="padding:6px 0;color:${COLOR_BLACK};font-weight:500;">${escapeHTML(data.nombre)}</td></tr>
+      <tr><td style="padding:6px 0;color:${COLOR_COOL_GRAY};">Categoría:</td><td style="padding:6px 0;color:${COLOR_BLACK};">${escapeHTML(data.especialidad_label || data.especialidad)}</td></tr>
+      <tr><td style="padding:6px 0;color:${COLOR_COOL_GRAY};">Modelo InBody:</td><td style="padding:6px 0;color:${COLOR_BLACK};">${escapeHTML(data.modelo_inbody_label || data.modelo_inbody)}</td></tr>
+      <tr><td style="padding:6px 0;color:${COLOR_COOL_GRAY};">Núm. serie:</td><td style="padding:6px 0;color:${COLOR_BLACK};font-family:'Lato',Menlo,monospace;font-weight:700;">${escapeHTML(data.numero_serie || '—')}</td></tr>
+      ${data.descripcion_breve ? `<tr><td style="padding:6px 0;color:${COLOR_COOL_GRAY};vertical-align:top;">Descripción:</td><td style="padding:6px 0;color:${COLOR_BLACK};line-height:1.5;">${escapeHTML(data.descripcion_breve)}</td></tr>` : ''}
     </table>
   </div>
-  <div style="background:#fafaf7;border-radius:12px;padding:20px;margin-bottom:16px;">
-    <div style="font-size:11px;font-weight:600;color:#971B2F;letter-spacing:0.12em;text-transform:uppercase;margin-bottom:12px;">Contacto</div>
+  <div style="background:${COLOR_BG};border-radius:12px;padding:20px;margin-bottom:16px;">
+    <div style="font-size:11px;font-weight:600;color:${COLOR_RED};letter-spacing:0.12em;text-transform:uppercase;margin-bottom:12px;">Contacto</div>
     <table width="100%" style="font-size:13px;">
-      <tr><td style="padding:6px 0;color:#5c5c60;width:140px;">WhatsApp:</td><td style="padding:6px 0;color:#18181a;">${formatPhone(data.whatsapp)}</td></tr>
-      <tr><td style="padding:6px 0;color:#5c5c60;">Teléfono:</td><td style="padding:6px 0;color:#18181a;">${formatPhone(data.telefono)}</td></tr>
-      <tr><td style="padding:6px 0;color:#5c5c60;">Email:</td><td style="padding:6px 0;color:#18181a;">${escapeHTML(data.email)}</td></tr>
-      ${data.sitio_web ? `<tr><td style="padding:6px 0;color:#5c5c60;">Web:</td><td style="padding:6px 0;color:#18181a;">${escapeHTML(data.sitio_web)}</td></tr>` : ''}
+      <tr><td style="padding:6px 0;color:${COLOR_COOL_GRAY};width:140px;">WhatsApp:</td><td style="padding:6px 0;color:${COLOR_BLACK};">${formatPhone(data.whatsapp)}</td></tr>
+      <tr><td style="padding:6px 0;color:${COLOR_COOL_GRAY};">Teléfono:</td><td style="padding:6px 0;color:${COLOR_BLACK};">${formatPhone(data.telefono)}</td></tr>
+      <tr><td style="padding:6px 0;color:${COLOR_COOL_GRAY};">Email:</td><td style="padding:6px 0;color:${COLOR_BLACK};">${escapeHTML(data.email)}</td></tr>
+      ${data.sitio_web ? `<tr><td style="padding:6px 0;color:${COLOR_COOL_GRAY};">Web:</td><td style="padding:6px 0;color:${COLOR_BLACK};">${escapeHTML(data.sitio_web)}</td></tr>` : ''}
     </table>
   </div>
-  <div style="background:#fafaf7;border-radius:12px;padding:20px;margin-bottom:16px;">
-    <div style="font-size:11px;font-weight:600;color:#971B2F;letter-spacing:0.12em;text-transform:uppercase;margin-bottom:12px;">Ubicaciones (${data.ubicaciones.length})</div>
+  <div style="background:${COLOR_BG};border-radius:12px;padding:20px;margin-bottom:16px;">
+    <div style="font-size:11px;font-weight:600;color:${COLOR_RED};letter-spacing:0.12em;text-transform:uppercase;margin-bottom:12px;">Ubicaciones (${data.ubicaciones.length})</div>
     <table width="100%">${ubicaciones}</table>
   </div>
   ${data.foto_perfil_url || data.foto_equipo_url ? `
-  <div style="background:#fafaf7;border-radius:12px;padding:20px;margin-bottom:24px;">
-    <div style="font-size:11px;font-weight:600;color:#971B2F;letter-spacing:0.12em;text-transform:uppercase;margin-bottom:12px;">Fotos</div>
+  <div style="background:${COLOR_BG};border-radius:12px;padding:20px;margin-bottom:24px;">
+    <div style="font-size:11px;font-weight:600;color:${COLOR_RED};letter-spacing:0.12em;text-transform:uppercase;margin-bottom:12px;">Fotos</div>
     <table width="100%"><tr>
-      ${data.foto_perfil_url ? `<td style="width:50%;padding-right:8px;"><img src="${data.foto_perfil_url}" style="width:100%;border-radius:8px;display:block;"/><div style="font-size:11px;color:#5c5c60;text-align:center;margin-top:6px;">Foto del consultorio</div></td>` : ''}
-      ${data.foto_equipo_url ? `<td style="width:50%;padding-left:8px;"><img src="${data.foto_equipo_url}" style="width:100%;border-radius:8px;display:block;"/><div style="font-size:11px;color:#5c5c60;text-align:center;margin-top:6px;">Foto del equipo InBody</div></td>` : ''}
+      ${data.foto_perfil_url ? `<td style="width:50%;padding-right:8px;"><img src="${data.foto_perfil_url}" style="width:100%;border-radius:8px;display:block;"/><div style="font-size:11px;color:${COLOR_COOL_GRAY};text-align:center;margin-top:6px;">Foto del consultorio</div></td>` : ''}
+      ${data.foto_equipo_url ? `<td style="width:50%;padding-left:8px;"><img src="${data.foto_equipo_url}" style="width:100%;border-radius:8px;display:block;"/><div style="font-size:11px;color:${COLOR_COOL_GRAY};text-align:center;margin-top:6px;">Foto del equipo InBody</div></td>` : ''}
     </tr></table>
   </div>` : ''}
   <p style="margin:24px 0 16px;font-size:12px;color:#8a8a8f;line-height:1.6;">
     La solicitud quedó registrada con estado <strong>pendiente</strong>. Da clic para revisarla:
   </p>
   <div style="text-align:center;margin:0 0 8px;">
-    <a href="${data.admin_url || 'https://directorio-inbody.vercel.app/inbody-admin/pendientes'}" style="display:inline-block;background:#971B2F;color:white;font-size:14px;font-weight:600;padding:14px 32px;border-radius:99px;text-decoration:none;">
+    <a href="${data.admin_url || 'https://directorio-inbody.vercel.app/inbody-admin/pendientes'}" style="display:inline-block;background:${COLOR_RED};color:white;font-size:14px;font-weight:600;padding:14px 32px;border-radius:99px;text-decoration:none;">
       Revisar solicitud en el panel →
     </a>
   </div>
   <div style="text-align:center;margin-bottom:8px;font-size:11px;color:#8a8a8f;">
-    o copia esta URL: <a href="${data.admin_url || 'https://directorio-inbody.vercel.app/inbody-admin/pendientes'}" style="color:#971B2F;text-decoration:none;word-break:break-all;">${data.admin_url || 'https://directorio-inbody.vercel.app/inbody-admin/pendientes'}</a>
+    o copia esta URL: <a href="${data.admin_url || 'https://directorio-inbody.vercel.app/inbody-admin/pendientes'}" style="color:${COLOR_RED};text-decoration:none;word-break:break-all;">${data.admin_url || 'https://directorio-inbody.vercel.app/inbody-admin/pendientes'}</a>
   </div>
 </td></tr>
-<tr><td style="background:#fafaf7;padding:16px 32px;text-align:center;border-top:1px solid #ececea;">
+<tr><td style="background:${COLOR_BG};padding:16px 32px;text-align:center;border-top:1px solid #ececea;">
   <div style="font-size:11px;color:#8a8a8f;">Directorio InBody México · Panel administrativo</div>
 </td></tr>
 </table></td></tr></table></body></html>`;
@@ -230,49 +242,49 @@ function renderTeamEmail(data) {
 
 function renderDoctorEmail(data) {
   const ubicacionesText = (data.ubicaciones || []).map(function (u, i) {
-    return `<tr><td style="padding:4px 0;font-size:13px;color:#5c5c60;">
-      <strong style="color:#18181a;">${i === 0 ? 'Ubicación principal' : 'Ubicación ' + (i + 1)}:</strong><br/>
+    return `<tr><td style="padding:4px 0;font-size:13px;color:${COLOR_COOL_GRAY};">
+      <strong style="color:${COLOR_BLACK};">${i === 0 ? 'Ubicación principal' : 'Ubicación ' + (i + 1)}:</strong><br/>
       ${escapeHTML(u.direccion_completa || '')}<br/>
       ${escapeHTML(u.ciudad || '')}, ${escapeHTML(u.estado || '')}
     </td></tr>`;
   }).join('');
 
-  return `<!DOCTYPE html><html><head><meta charset="UTF-8"/></head>
-<body style="margin:0;padding:0;background:#f5f4f0;font-family:-apple-system,sans-serif;">
+  return `<!DOCTYPE html><html><head><meta charset="UTF-8"/>${FONT_LINK}</head>
+<body style="margin:0;padding:0;background:${COLOR_BG};font-family:${FONT_STACK};">
 <table width="100%" cellpadding="0" cellspacing="0" style="padding:40px 16px;"><tr><td align="center">
-<table width="600" cellpadding="0" cellspacing="0" style="background:white;border-radius:16px;overflow:hidden;box-shadow:0 4px 16px rgba(0,0,0,0.04);">
-<tr><td style="background:#971B2F;padding:32px;">
+<table width="600" cellpadding="0" cellspacing="0" style="background:white;border-radius:16px;overflow:hidden;box-shadow:0 4px 16px rgba(16,24,32,0.06);">
+<tr><td style="background:${COLOR_RED};padding:32px;">
   <div style="color:white;font-size:11px;font-weight:600;letter-spacing:0.15em;text-transform:uppercase;opacity:0.9;">Directorio InBody · México</div>
-  <div style="color:white;font-size:24px;font-weight:600;margin-top:8px;line-height:1.3;">Recibimos tu solicitud</div>
+  <div style="color:white;font-size:24px;font-weight:700;margin-top:8px;line-height:1.3;font-family:${DISPLAY_FONT_STACK};">Recibimos tu solicitud</div>
 </td></tr>
 <tr><td style="padding:32px;">
-  <p style="margin:0 0 16px;font-size:15px;color:#18181a;line-height:1.6;">Hola <strong>${escapeHTML(data.nombre)}</strong>,</p>
-  <p style="margin:0 0 24px;font-size:14px;color:#5c5c60;line-height:1.7;">
+  <p style="margin:0 0 16px;font-size:15px;color:${COLOR_BLACK};line-height:1.6;">Hola <strong>${escapeHTML(data.nombre)}</strong>,</p>
+  <p style="margin:0 0 24px;font-size:14px;color:${COLOR_COOL_GRAY};line-height:1.7;">
     Gracias por solicitar tu registro en el Directorio Oficial de InBody México. Recibimos correctamente tu información.
   </p>
-  <div style="background:#fafaf7;border-radius:12px;padding:20px 24px;margin-bottom:24px;border-left:3px solid #971B2F;">
-    <div style="font-size:11px;font-weight:600;color:#971B2F;letter-spacing:0.12em;text-transform:uppercase;margin-bottom:6px;">Siguiente paso</div>
-    <div style="font-size:14px;color:#18181a;line-height:1.6;">
+  <div style="background:${COLOR_BG};border-radius:12px;padding:20px 24px;margin-bottom:24px;border-left:3px solid ${COLOR_RED};">
+    <div style="font-size:11px;font-weight:600;color:${COLOR_RED};letter-spacing:0.12em;text-transform:uppercase;margin-bottom:6px;">Siguiente paso</div>
+    <div style="font-size:14px;color:${COLOR_BLACK};line-height:1.6;">
       En las próximas <strong>3 a 5 días hábiles</strong> el equipo de InBody México verificará tu información y validará el número de serie de tu equipo. Te contactaremos cuando esté aprobada.
     </div>
   </div>
   <div style="margin-bottom:24px;">
     <div style="font-size:11px;font-weight:600;color:#8a8a8f;letter-spacing:0.12em;text-transform:uppercase;margin-bottom:12px;">Resumen de tu solicitud</div>
     <table width="100%" style="font-size:13px;border:1px solid #ececea;border-radius:10px;">
-      <tr><td style="padding:12px 16px;border-bottom:1px solid #ececea;color:#5c5c60;width:130px;">Nombre:</td><td style="padding:12px 16px;border-bottom:1px solid #ececea;color:#18181a;font-weight:500;">${escapeHTML(data.nombre)}</td></tr>
-      <tr><td style="padding:12px 16px;border-bottom:1px solid #ececea;color:#5c5c60;">Categoría:</td><td style="padding:12px 16px;border-bottom:1px solid #ececea;color:#18181a;">${escapeHTML(data.especialidad_label || data.especialidad)}</td></tr>
-      <tr><td style="padding:12px 16px;border-bottom:1px solid #ececea;color:#5c5c60;">Modelo InBody:</td><td style="padding:12px 16px;border-bottom:1px solid #ececea;color:#18181a;">${escapeHTML(data.modelo_inbody_label || data.modelo_inbody)}</td></tr>
-      <tr><td style="padding:12px 16px;border-bottom:1px solid #ececea;color:#5c5c60;">WhatsApp:</td><td style="padding:12px 16px;border-bottom:1px solid #ececea;color:#18181a;">${formatPhone(data.whatsapp)}</td></tr>
-      <tr><td style="padding:12px 16px;color:#5c5c60;vertical-align:top;">Ubicaciones:</td><td style="padding:8px 16px;"><table width="100%">${ubicacionesText}</table></td></tr>
+      <tr><td style="padding:12px 16px;border-bottom:1px solid #ececea;color:${COLOR_COOL_GRAY};width:130px;">Nombre:</td><td style="padding:12px 16px;border-bottom:1px solid #ececea;color:${COLOR_BLACK};font-weight:500;">${escapeHTML(data.nombre)}</td></tr>
+      <tr><td style="padding:12px 16px;border-bottom:1px solid #ececea;color:${COLOR_COOL_GRAY};">Categoría:</td><td style="padding:12px 16px;border-bottom:1px solid #ececea;color:${COLOR_BLACK};">${escapeHTML(data.especialidad_label || data.especialidad)}</td></tr>
+      <tr><td style="padding:12px 16px;border-bottom:1px solid #ececea;color:${COLOR_COOL_GRAY};">Modelo InBody:</td><td style="padding:12px 16px;border-bottom:1px solid #ececea;color:${COLOR_BLACK};">${escapeHTML(data.modelo_inbody_label || data.modelo_inbody)}</td></tr>
+      <tr><td style="padding:12px 16px;border-bottom:1px solid #ececea;color:${COLOR_COOL_GRAY};">WhatsApp:</td><td style="padding:12px 16px;border-bottom:1px solid #ececea;color:${COLOR_BLACK};">${formatPhone(data.whatsapp)}</td></tr>
+      <tr><td style="padding:12px 16px;color:${COLOR_COOL_GRAY};vertical-align:top;">Ubicaciones:</td><td style="padding:8px 16px;"><table width="100%">${ubicacionesText}</table></td></tr>
     </table>
   </div>
   <p style="margin:0;font-size:13px;color:#8a8a8f;line-height:1.6;">
-    <strong style="color:#18181a;">Equipo InBody México</strong>
+    <strong style="color:${COLOR_BLACK};">Equipo InBody México</strong>
   </p>
 </td></tr>
-<tr><td style="background:#101820;padding:20px 32px;text-align:center;">
+<tr><td style="background:${COLOR_BLACK};padding:20px 32px;text-align:center;">
   <div style="font-size:11px;color:#8a8a8f;line-height:1.6;">
-    © ${new Date().getFullYear()} InBody México · <a href="https://www.inbodymexico.com" style="color:#5c5c60;text-decoration:none;">inbodymexico.com</a>
+    © ${new Date().getFullYear()} InBody México · <a href="https://www.inbodymexico.com" style="color:${COLOR_COOL_GRAY};text-decoration:none;">inbodymexico.com</a>
   </div>
 </td></tr>
 </table></td></tr></table></body></html>`;
