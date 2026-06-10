@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { X, MapPin, Phone, Mail, Globe, Instagram, Facebook, Sparkles, CheckCircle2, XCircle, RotateCcw, Loader2, AlertCircle, Clock, User, ZoomIn } from 'lucide-react';
+import { X, MapPin, Phone, Mail, Globe, Instagram, Facebook, Sparkles, CheckCircle2, XCircle, RotateCcw, Loader2, AlertCircle, Clock, ZoomIn, Hash } from 'lucide-react';
 import mapboxgl from 'mapbox-gl';
 import { MAPBOX_TOKEN } from '../../lib/mapbox.js';
 import { getEspecialidadLabel } from '../../config/especialidades.js';
@@ -9,7 +9,7 @@ import { aprobarProfesional, rechazarProfesional, restaurarProfesional } from '.
 mapboxgl.accessToken = MAPBOX_TOKEN;
 
 export default function ProfesionalDetailModal({ profesional, onClose, onAction }) {
-  const [mode, setMode] = useState('view'); // view | reject_motivo
+  const [mode, setMode] = useState('view');
   const [motivo, setMotivo] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -20,13 +20,9 @@ export default function ProfesionalDetailModal({ profesional, onClose, onAction 
   useEffect(function () {
     function onKey(e) {
       if (e.key === 'Escape') {
-        if (zoomFoto) {
-          setZoomFoto(null);
-        } else if (mode === 'reject_motivo') {
-          setMode('view');
-        } else {
-          onClose();
-        }
+        if (zoomFoto) setZoomFoto(null);
+        else if (mode === 'reject_motivo') setMode('view');
+        else onClose();
       }
     }
     document.addEventListener('keydown', onKey);
@@ -37,7 +33,6 @@ export default function ProfesionalDetailModal({ profesional, onClose, onAction 
     };
   }, [onClose, mode, zoomFoto]);
 
-  // Mini mapa con todas las ubicaciones
   useEffect(function () {
     if (!profesional || !profesional.ubicaciones || profesional.ubicaciones.length === 0) return;
     const ubicConCoords = profesional.ubicaciones.filter(function (u) { return u.lat && u.lng; });
@@ -61,9 +56,7 @@ export default function ProfesionalDetailModal({ profesional, onClose, onAction 
       ubicConCoords.forEach(function (u) {
         const el = document.createElement('div');
         el.className = 'inbody-marker';
-        new mapboxgl.Marker({ element: el })
-          .setLngLat([u.lng, u.lat])
-          .addTo(map.current);
+        new mapboxgl.Marker({ element: el }).setLngLat([u.lng, u.lat]).addTo(map.current);
       });
 
       if (ubicConCoords.length > 1) {
@@ -87,51 +80,41 @@ export default function ProfesionalDetailModal({ profesional, onClose, onAction 
   const modelo = getModeloLabel(profesional.modelo_inbody);
 
   async function handleAprobar() {
-    setLoading(true);
-    setError('');
+    setLoading(true); setError('');
     try {
       await aprobarProfesional(profesional.id);
       onAction && onAction('aprobado');
       onClose();
     } catch (err) {
       setError(err.message);
-    } finally {
-      setLoading(false);
-    }
+    } finally { setLoading(false); }
   }
 
   async function handleRechazar() {
-    setLoading(true);
-    setError('');
+    setLoading(true); setError('');
     try {
       await rechazarProfesional(profesional.id, motivo.trim() || null);
       onAction && onAction('rechazado');
       onClose();
     } catch (err) {
       setError(err.message);
-    } finally {
-      setLoading(false);
-    }
+    } finally { setLoading(false); }
   }
 
   async function handleRestaurar() {
-    setLoading(true);
-    setError('');
+    setLoading(true); setError('');
     try {
       await restaurarProfesional(profesional.id);
       onAction && onAction('restaurado');
       onClose();
     } catch (err) {
       setError(err.message);
-    } finally {
-      setLoading(false);
-    }
+    } finally { setLoading(false); }
   }
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-0 md:p-4" onClick={onClose}>
       <div className="absolute inset-0 bg-neutral-900/50 backdrop-blur-sm" />
-
       <div
         onClick={function (e) { e.stopPropagation(); }}
         className="relative bg-white w-full md:max-w-3xl md:rounded-3xl shadow-2xl overflow-hidden max-h-[95vh] flex flex-col animate-fade-in"
@@ -140,58 +123,54 @@ export default function ProfesionalDetailModal({ profesional, onClose, onAction 
           <div className="flex items-center gap-3 min-w-0">
             <StatusBadge status={profesional.status} />
             <div className="min-w-0 flex-1">
-              <h2 className="font-display text-xl font-medium text-neutral-900 leading-tight truncate">
-                {profesional.nombre}
-              </h2>
+              <h2 className="font-display text-xl font-medium text-neutral-900 leading-tight truncate">{profesional.nombre}</h2>
               <div className="text-xs text-neutral-500">{especialidad}</div>
             </div>
           </div>
-          <button
-            onClick={onClose}
-            className="w-8 h-8 rounded-full bg-neutral-100 hover:bg-neutral-200 text-neutral-600 flex items-center justify-center transition-colors flex-shrink-0"
-          >
+          <button onClick={onClose} className="w-8 h-8 rounded-full bg-neutral-100 hover:bg-neutral-200 text-neutral-600 flex items-center justify-center flex-shrink-0">
             <X className="w-4 h-4" />
           </button>
         </div>
 
         <div className="flex-1 overflow-y-auto">
           <div className="p-5 md:p-6 space-y-5">
-            {/* Fotos */}
             <div className="grid grid-cols-2 gap-3">
               {profesional.foto_perfil_url && (
-                <PhotoCard
-                  url={profesional.foto_perfil_url}
-                  label="Foto de perfil"
-                  description="Pública en el directorio"
-                  onZoom={function () { setZoomFoto(profesional.foto_perfil_url); }}
-                />
+                <PhotoCard url={profesional.foto_perfil_url} label="Consultorio / Instalaciones" description="Pública en el directorio" onZoom={function () { setZoomFoto(profesional.foto_perfil_url); }} />
               )}
               {profesional.foto_equipo_url && (
-                <PhotoCard
-                  url={profesional.foto_equipo_url}
-                  label="Foto del equipo"
-                  description="Para verificación interna"
-                  onZoom={function () { setZoomFoto(profesional.foto_equipo_url); }}
-                />
+                <PhotoCard url={profesional.foto_equipo_url} label="Equipo InBody" description="Para verificación interna" onZoom={function () { setZoomFoto(profesional.foto_equipo_url); }} />
               )}
             </div>
 
-            {/* Descripción */}
             {profesional.descripcion_breve && (
               <Section title="Descripción">
                 <p className="text-sm text-neutral-700 leading-relaxed">{profesional.descripcion_breve}</p>
               </Section>
             )}
 
-            {/* Equipo */}
             <Section title="Equipo InBody">
-              <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-inbody-red-soft border border-inbody-red/15 text-xs font-medium text-inbody-red-dark">
-                <Sparkles className="w-3 h-3" />
-                {modelo}
+              <div className="space-y-2.5">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-inbody-red-soft border border-inbody-red/15 text-xs font-medium text-inbody-red-dark">
+                  <Sparkles className="w-3 h-3" />
+                  {modelo}
+                </div>
+                {profesional.numero_serie ? (
+                  <div className="flex items-center gap-2 p-3 bg-amber-50 border border-amber-200 rounded-xl">
+                    <Hash className="w-3.5 h-3.5 text-amber-700 flex-shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <div className="text-[10px] uppercase tracking-wider text-amber-800 font-semibold mb-0.5">Número de serie (solo visible para admins)</div>
+                      <div className="text-sm font-mono text-amber-900 font-semibold">{profesional.numero_serie}</div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-[11px] text-neutral-500 italic">
+                    Registro legacy: no se solicitó número de serie en este registro.
+                  </div>
+                )}
               </div>
             </Section>
 
-            {/* Ubicaciones con mapa */}
             <Section title={'Ubicaciones (' + (profesional.ubicaciones || []).length + ')'}>
               <div className="space-y-2.5 mb-4">
                 {(profesional.ubicaciones || []).map(function (u, idx) {
@@ -203,14 +182,9 @@ export default function ProfesionalDetailModal({ profesional, onClose, onAction 
                           {idx === 0 ? 'Principal' : 'Ubicación ' + (idx + 1)}
                         </div>
                         <div className="text-sm text-neutral-900 leading-relaxed">{u.direccion_completa}</div>
-                        <div className="text-xs text-neutral-500">
-                          {u.ciudad}, {u.estado}
-                          {u.codigo_postal ? ' · CP ' + u.codigo_postal : ''}
-                        </div>
+                        <div className="text-xs text-neutral-500">{u.ciudad}, {u.estado}{u.codigo_postal ? ' · CP ' + u.codigo_postal : ''}</div>
                         {u.lat && u.lng ? (
-                          <div className="text-[10px] text-green-600 mt-1">
-                            ✓ Coordenadas: {u.lat.toFixed(5)}, {u.lng.toFixed(5)}
-                          </div>
+                          <div className="text-[10px] text-green-600 mt-1">✓ Coordenadas: {u.lat.toFixed(5)}, {u.lng.toFixed(5)}</div>
                         ) : (
                           <div className="text-[10px] text-amber-600 mt-1">⚠ Sin coordenadas (revisar manualmente)</div>
                         )}
@@ -222,7 +196,6 @@ export default function ProfesionalDetailModal({ profesional, onClose, onAction 
               <div ref={mapContainer} className="rounded-xl overflow-hidden border border-neutral-150" style={{ height: '200px' }} />
             </Section>
 
-            {/* Contacto */}
             <Section title="Contacto">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                 {profesional.email && <ContactRow icon={<Mail className="w-3.5 h-3.5" />} label="Correo" value={profesional.email} href={'mailto:' + profesional.email} />}
@@ -234,7 +207,6 @@ export default function ProfesionalDetailModal({ profesional, onClose, onAction 
               </div>
             </Section>
 
-            {/* Metadata */}
             <Section title="Información de la solicitud">
               <div className="space-y-1.5 text-xs">
                 <MetaRow icon={<Clock className="w-3 h-3" />} label="Recibida" value={formatDate(profesional.created_at)} />
@@ -251,7 +223,6 @@ export default function ProfesionalDetailModal({ profesional, onClose, onAction 
           </div>
         </div>
 
-        {/* Footer con acciones */}
         <div className="border-t border-neutral-150 p-4 md:p-5 bg-white flex-shrink-0">
           {error && (
             <div className="mb-3 p-3 bg-inbody-red-soft border border-inbody-red/20 rounded-xl flex items-start gap-2.5">
@@ -264,19 +235,11 @@ export default function ProfesionalDetailModal({ profesional, onClose, onAction 
             <div className="flex items-center justify-end gap-2 flex-wrap">
               {profesional.status === 'pendiente' && (
                 <>
-                  <button
-                    onClick={function () { setMode('reject_motivo'); }}
-                    disabled={loading}
-                    className="flex items-center gap-1.5 px-4 py-2.5 rounded-full bg-white border border-neutral-200 hover:border-inbody-red/30 hover:bg-inbody-red-soft text-neutral-700 hover:text-inbody-red text-sm font-medium transition-all"
-                  >
+                  <button onClick={function () { setMode('reject_motivo'); }} disabled={loading} className="flex items-center gap-1.5 px-4 py-2.5 rounded-full bg-white border border-neutral-200 hover:border-inbody-red/30 hover:bg-inbody-red-soft text-neutral-700 hover:text-inbody-red text-sm font-medium transition-all">
                     <XCircle className="w-3.5 h-3.5" />
                     Rechazar
                   </button>
-                  <button
-                    onClick={handleAprobar}
-                    disabled={loading}
-                    className="flex items-center gap-1.5 px-5 py-2.5 rounded-full bg-green-600 hover:bg-green-700 text-white text-sm font-semibold transition-all shadow-lg shadow-green-600/25 disabled:opacity-60"
-                  >
+                  <button onClick={handleAprobar} disabled={loading} className="flex items-center gap-1.5 px-5 py-2.5 rounded-full bg-green-600 hover:bg-green-700 text-white text-sm font-semibold transition-all shadow-lg shadow-green-600/25 disabled:opacity-60">
                     {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
                     Aprobar
                   </button>
@@ -284,22 +247,14 @@ export default function ProfesionalDetailModal({ profesional, onClose, onAction 
               )}
 
               {profesional.status === 'aprobado' && (
-                <button
-                  onClick={function () { setMode('reject_motivo'); }}
-                  disabled={loading}
-                  className="flex items-center gap-1.5 px-4 py-2.5 rounded-full bg-white border border-neutral-200 hover:border-inbody-red/30 text-neutral-700 hover:text-inbody-red text-sm font-medium transition-all"
-                >
+                <button onClick={function () { setMode('reject_motivo'); }} disabled={loading} className="flex items-center gap-1.5 px-4 py-2.5 rounded-full bg-white border border-neutral-200 hover:border-inbody-red/30 text-neutral-700 hover:text-inbody-red text-sm font-medium transition-all">
                   <XCircle className="w-3.5 h-3.5" />
                   Rechazar (quitar del directorio)
                 </button>
               )}
 
               {profesional.status === 'rechazado' && (
-                <button
-                  onClick={handleRestaurar}
-                  disabled={loading}
-                  className="flex items-center gap-1.5 px-5 py-2.5 rounded-full bg-neutral-900 hover:bg-inbody-red text-white text-sm font-semibold transition-all"
-                >
+                <button onClick={handleRestaurar} disabled={loading} className="flex items-center gap-1.5 px-5 py-2.5 rounded-full bg-neutral-900 hover:bg-inbody-red text-white text-sm font-semibold transition-all">
                   {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RotateCcw className="w-3.5 h-3.5" />}
                   Restaurar a pendiente
                 </button>
@@ -310,29 +265,21 @@ export default function ProfesionalDetailModal({ profesional, onClose, onAction 
           {mode === 'reject_motivo' && (
             <div className="space-y-3">
               <div className="text-xs text-neutral-700 font-medium">
-                Motivo del rechazo <span className="text-neutral-400 font-normal">(opcional, se le enviará al doctor por correo)</span>
+                Motivo del rechazo <span className="text-neutral-400 font-normal">(opcional, se enviará al doctor por correo)</span>
               </div>
               <textarea
                 value={motivo}
                 onChange={function (e) { setMotivo(e.target.value); }}
-                placeholder="Ej. La foto del equipo no muestra claramente el modelo de InBody. Por favor envía una nueva solicitud con una foto más clara."
+                placeholder="Ej. El número de serie no coincide con nuestros registros."
                 rows={3}
                 maxLength={500}
                 className="w-full px-3.5 py-2.5 bg-white border border-neutral-200 focus:border-inbody-red/40 focus:ring-2 focus:ring-inbody-red/20 rounded-xl text-sm transition-all outline-none resize-none"
               />
               <div className="flex items-center justify-end gap-2">
-                <button
-                  onClick={function () { setMode('view'); setMotivo(''); }}
-                  disabled={loading}
-                  className="px-4 py-2 rounded-full text-sm text-neutral-700 hover:bg-neutral-100 transition-colors"
-                >
+                <button onClick={function () { setMode('view'); setMotivo(''); }} disabled={loading} className="px-4 py-2 rounded-full text-sm text-neutral-700 hover:bg-neutral-100 transition-colors">
                   Cancelar
                 </button>
-                <button
-                  onClick={handleRechazar}
-                  disabled={loading}
-                  className="flex items-center gap-1.5 px-5 py-2 rounded-full bg-inbody-red hover:bg-inbody-red-hover text-white text-sm font-semibold transition-all shadow-lg shadow-inbody-red/25 disabled:opacity-60"
-                >
+                <button onClick={handleRechazar} disabled={loading} className="flex items-center gap-1.5 px-5 py-2 rounded-full bg-inbody-red hover:bg-inbody-red-hover text-white text-sm font-semibold transition-all shadow-lg shadow-inbody-red/25 disabled:opacity-60">
                   {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <XCircle className="w-3.5 h-3.5" />}
                   Confirmar rechazo
                 </button>
@@ -342,16 +289,9 @@ export default function ProfesionalDetailModal({ profesional, onClose, onAction 
         </div>
       </div>
 
-      {/* Zoom de foto */}
       {zoomFoto && (
-        <div
-          className="fixed inset-0 z-[110] flex items-center justify-center bg-neutral-900/90 backdrop-blur-md p-4 animate-fade-in"
-          onClick={function () { setZoomFoto(null); }}
-        >
-          <button
-            onClick={function () { setZoomFoto(null); }}
-            className="absolute top-4 right-4 w-10 h-10 rounded-full bg-black/50 hover:bg-black/70 text-white flex items-center justify-center"
-          >
+        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-neutral-900/90 backdrop-blur-md p-4 animate-fade-in" onClick={function () { setZoomFoto(null); }}>
+          <button onClick={function () { setZoomFoto(null); }} className="absolute top-4 right-4 w-10 h-10 rounded-full bg-black/50 hover:bg-black/70 text-white flex items-center justify-center">
             <X className="w-5 h-5" />
           </button>
           <img src={zoomFoto} alt="Zoom" className="max-w-full max-h-full rounded-2xl shadow-2xl" />
@@ -410,9 +350,7 @@ function ContactRow({ icon, label, value, href, external }) {
       </div>
     </div>
   );
-  if (href) {
-    return <a href={href} target={external ? '_blank' : undefined} rel={external ? 'noopener noreferrer' : undefined}>{content}</a>;
-  }
+  if (href) return <a href={href} target={external ? '_blank' : undefined} rel={external ? 'noopener noreferrer' : undefined}>{content}</a>;
   return content;
 }
 

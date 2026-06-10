@@ -1,6 +1,6 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useState } from 'react';
-import { Loader2, RefreshCw } from 'lucide-react';
+import { Loader2, RefreshCw, Download } from 'lucide-react';
 import { useAdminAuth } from '../hooks/useAdminAuth.js';
 import { useProfesionalesAdmin, useCountPendientes } from '../hooks/useProfesionalesAdmin.js';
 import LoginScreen from '../components/admin/LoginScreen.jsx';
@@ -10,6 +10,7 @@ import ProfesionalDetailModal from '../components/admin/ProfesionalDetailModal.j
 import AdminsView from '../components/admin/AdminsView.jsx';
 import AuditLogView from '../components/admin/AuditLogView.jsx';
 import MiCuentaView from '../components/admin/MiCuentaView.jsx';
+import { profesionalesToCSV, downloadCSV } from '../lib/exportCSV.js';
 
 export default function AdminPage() {
   const auth = useAdminAuth();
@@ -46,31 +47,13 @@ function AdminApp({ auth }) {
           <Routes>
             <Route path="/" element={<Navigate to="/inbody-admin/pendientes" replace />} />
             <Route path="/pendientes" element={
-              <ProfesionalesView
-                key="pendientes"
-                status="pendiente"
-                title="Solicitudes pendientes"
-                subtitle="Profesionales esperando revisión."
-                onUpdate={refetchCount}
-              />
+              <ProfesionalesView key="pendientes" status="pendiente" title="Solicitudes pendientes" subtitle="Profesionales esperando revisión." onUpdate={refetchCount} />
             } />
             <Route path="/aprobados" element={
-              <ProfesionalesView
-                key="aprobados"
-                status="aprobado"
-                title="Profesionales aprobados"
-                subtitle="Visibles en el directorio público."
-                onUpdate={refetchCount}
-              />
+              <ProfesionalesView key="aprobados" status="aprobado" title="Profesionales aprobados" subtitle="Visibles en el directorio público." onUpdate={refetchCount} />
             } />
             <Route path="/rechazados" element={
-              <ProfesionalesView
-                key="rechazados"
-                status="rechazado"
-                title="Solicitudes rechazadas"
-                subtitle="Puedes restaurar a pendiente si fue por error."
-                onUpdate={refetchCount}
-              />
+              <ProfesionalesView key="rechazados" status="rechazado" title="Solicitudes rechazadas" subtitle="Puedes restaurar a pendiente si fue por error." onUpdate={refetchCount} />
             } />
             {auth.isSuperAdmin && (
               <>
@@ -91,6 +74,7 @@ function ProfesionalesView({ status, title, subtitle, onUpdate }) {
   const { profesionales, loading, refetch } = useProfesionalesAdmin(status);
   const [selected, setSelected] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [exporting, setExporting] = useState(false);
 
   async function handleRefresh() {
     setRefreshing(true);
@@ -104,6 +88,21 @@ function ProfesionalesView({ status, title, subtitle, onUpdate }) {
     if (onUpdate) onUpdate();
   }
 
+  function handleExportCSV() {
+    if (!profesionales || profesionales.length === 0) return;
+    setExporting(true);
+    try {
+      const csv = profesionalesToCSV(profesionales);
+      const date = new Date().toISOString().slice(0, 10);
+      const filename = 'directorio-inbody-' + status + '-' + date + '.csv';
+      downloadCSV(csv, filename);
+    } catch (err) {
+      console.error('Error exportando CSV:', err);
+    } finally {
+      setTimeout(function () { setExporting(false); }, 600);
+    }
+  }
+
   const emptyMessages = {
     pendiente: 'Sin solicitudes pendientes',
     aprobado: 'Sin profesionales aprobados aún',
@@ -112,22 +111,33 @@ function ProfesionalesView({ status, title, subtitle, onUpdate }) {
 
   return (
     <div>
-      <div className="flex items-start justify-between gap-4 mb-6">
+      <div className="flex items-start justify-between gap-4 mb-6 flex-wrap">
         <div>
           <h1 className="font-display text-2xl md:text-3xl font-light tracking-tight text-neutral-900 leading-tight">
             {title}
           </h1>
           <p className="text-sm text-neutral-500 mt-1">{subtitle}</p>
         </div>
-        <button
-          onClick={handleRefresh}
-          disabled={refreshing || loading}
-          className="flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-white border border-neutral-200 hover:border-neutral-300 hover:bg-neutral-50 text-neutral-700 text-xs font-medium transition-all disabled:opacity-50 flex-shrink-0"
-          title="Actualizar lista"
-        >
-          <RefreshCw className={'w-3.5 h-3.5 ' + (refreshing ? 'animate-spin' : '')} />
-          Refrescar
-        </button>
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <button
+            onClick={handleExportCSV}
+            disabled={exporting || loading || profesionales.length === 0}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-white border border-neutral-200 hover:border-neutral-300 hover:bg-neutral-50 text-neutral-700 text-xs font-medium transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+            title="Descargar lista como CSV"
+          >
+            <Download className="w-3.5 h-3.5" />
+            {exporting ? 'Descargando...' : 'Exportar CSV'}
+          </button>
+          <button
+            onClick={handleRefresh}
+            disabled={refreshing || loading}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-white border border-neutral-200 hover:border-neutral-300 hover:bg-neutral-50 text-neutral-700 text-xs font-medium transition-all disabled:opacity-50"
+            title="Actualizar lista"
+          >
+            <RefreshCw className={'w-3.5 h-3.5 ' + (refreshing ? 'animate-spin' : '')} />
+            Refrescar
+          </button>
+        </div>
       </div>
 
       <ProfesionalesList

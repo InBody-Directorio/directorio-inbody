@@ -24,7 +24,7 @@ const STEPS = [
 
 const INITIAL_FORM = {
   nombre: '', especialidad: '', descripcion_breve: '', foto_perfil: null,
-  modelo_inbody: '', foto_equipo: null,
+  modelo_inbody: '', numero_serie: '', foto_equipo: null,
   ubicaciones: [{ direccion_completa: '', ciudad: '', estado: '', codigo_postal: '', lat: null, lng: null, geo_status: 'idle' }],
   whatsapp: '', telefono: '', email: '',
   sitio_web: '', instagram: '', facebook: '',
@@ -78,12 +78,15 @@ export default function RegistroPage() {
 
     if (stepIdx === 0) {
       if (!formData.nombre || formData.nombre.trim().length < 3) newErrors.nombre = 'El nombre debe tener al menos 3 caracteres';
-      if (!formData.especialidad) newErrors.especialidad = 'Selecciona una especialidad';
-      if (!formData.foto_perfil) newErrors.foto_perfil = 'Sube una foto de perfil';
+      if (!formData.especialidad) newErrors.especialidad = 'Selecciona una categoría';
+      if (!formData.foto_perfil) newErrors.foto_perfil = 'Sube una foto de tus instalaciones';
     }
 
     if (stepIdx === 1) {
       if (!formData.modelo_inbody) newErrors.modelo_inbody = 'Selecciona el modelo de tu equipo';
+      if (!formData.numero_serie || formData.numero_serie.trim().length < 4) {
+        newErrors.numero_serie = 'Ingresa el número de serie de tu equipo (mínimo 4 caracteres)';
+      }
       if (!formData.foto_equipo) newErrors.foto_equipo = 'Sube una foto de tu equipo InBody';
     }
 
@@ -135,15 +138,12 @@ export default function RegistroPage() {
     setSubmitError('');
 
     try {
-      // 1. Subir foto perfil
-      setSubmitProgress('Subiendo foto de perfil...');
+      setSubmitProgress('Subiendo foto del consultorio...');
       const fotoPerfilUrl = await uploadFoto(formData.foto_perfil, 'perfil');
 
-      // 2. Subir foto equipo
       setSubmitProgress('Subiendo foto del equipo...');
       const fotoEquipoUrl = await uploadFoto(formData.foto_equipo, 'equipo');
 
-      // 3. Enviar solicitud
       setSubmitProgress('Enviando tu solicitud...');
       const especialidadObj = ESPECIALIDADES.find(function (e) { return e.id === formData.especialidad; });
       const modeloObj = MODELOS_INBODY.find(function (m) { return m.id === formData.modelo_inbody; });
@@ -155,6 +155,7 @@ export default function RegistroPage() {
         descripcion_breve: formData.descripcion_breve,
         modelo_inbody: formData.modelo_inbody,
         modelo_inbody_label: modeloObj ? modeloObj.label : formData.modelo_inbody,
+        numero_serie: formData.numero_serie,
         whatsapp: formData.whatsapp,
         telefono: formData.telefono,
         email: formData.email,

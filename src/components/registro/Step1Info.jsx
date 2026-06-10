@@ -1,4 +1,4 @@
-import { FormField, TextInput, TextArea, Select } from './FormFields.jsx';
+import { FormField, TextInput, Select, TextArea } from './FormFields.jsx';
 import PhotoUpload from './PhotoUpload.jsx';
 import { ESPECIALIDADES } from '../../config/especialidades.js';
 
@@ -10,40 +10,28 @@ export default function Step1Info({ formData, updateField, errors }) {
           Paso 1
         </div>
         <h2 className="font-display text-2xl md:text-3xl font-light tracking-tight text-neutral-900 leading-tight mb-1.5">
-          Información <em className="italic font-light text-inbody-red">profesional</em>
+          Información del profesional
         </h2>
         <p className="text-sm text-neutral-500 leading-relaxed">
-          Datos básicos que aparecerán en tu perfil del directorio.
+          Datos públicos que aparecerán en tu perfil del directorio.
         </p>
       </div>
 
-      <FormField
-        label="Nombre completo o nombre del negocio"
-        required
-        error={errors.nombre}
-      >
+      <FormField label="Nombre completo o nombre del consultorio" required error={errors.nombre}>
         <TextInput
           value={formData.nombre}
-          onChange={function (v) {
-            updateField('nombre', v);
-          }}
-          placeholder="Dra. María Hernández / Centro Wellness Polanco"
-          maxLength={100}
+          onChange={function (v) { updateField('nombre', v); }}
+          placeholder="Dr. María Hernández / Nutrición Integral"
+          maxLength={120}
           error={errors.nombre}
         />
       </FormField>
 
-      <FormField
-        label="Especialidad"
-        required
-        error={errors.especialidad}
-      >
+      <FormField label="Especialidad o tipo de práctica" required error={errors.especialidad}>
         <Select
           value={formData.especialidad}
-          onChange={function (v) {
-            updateField('especialidad', v);
-          }}
-          placeholder="Selecciona tu especialidad"
+          onChange={function (v) { updateField('especialidad', v); }}
+          placeholder="Selecciona tu categoría"
           options={ESPECIALIDADES.map(function (e) {
             return { value: e.id, label: e.label };
           })}
@@ -52,32 +40,29 @@ export default function Step1Info({ formData, updateField, errors }) {
       </FormField>
 
       <FormField
-        label="Descripción profesional breve"
-        hint="Esta descripción aparecerá en tu tarjeta del directorio. Sé breve y específico."
-        error={errors.descripcion_breve}
+        label="Descripción breve"
+        hint="Una frase corta que aparece en tu tarjeta del directorio (máx 200 caracteres)"
       >
         <TextArea
           value={formData.descripcion_breve}
-          onChange={function (v) {
-            updateField('descripcion_breve', v);
-          }}
-          placeholder="Ej. Nutrióloga con 10 años de experiencia en composición corporal y planes deportivos."
+          onChange={function (v) { updateField('descripcion_breve', v); }}
+          placeholder="Ej. Especialistas en composición corporal y planes nutricionales personalizados."
           maxLength={200}
-          rows={3}
+          rows={2}
         />
       </FormField>
 
       <FormField
-        label="Foto de perfil"
+        label="Foto del consultorio o instalaciones"
         required
+        hint="Sube una foto de tus instalaciones, NO tu rostro. Esta foto representa tu consultorio en el directorio público."
         error={errors.foto_perfil}
-        hint="Esta foto se mostrará públicamente en tu tarjeta del directorio."
       >
         <PhotoUpload
           value={formData.foto_perfil}
-          onChange={function (v) {
-            updateField('foto_perfil', v);
-          }}
+          onChange={function (f) { updateField('foto_perfil', f); }}
+          placeholder="Sube una foto de tu consultorio"
+          aspect="cover"
         />
       </FormField>
     </div>
