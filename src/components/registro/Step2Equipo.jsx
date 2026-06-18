@@ -1,6 +1,6 @@
 import { FormField, TextInput, Select } from './FormFields.jsx';
 import PhotoUpload from './PhotoUpload.jsx';
-import { MODELOS_INBODY } from '../../config/modelos.js';
+import { getModelosVigentes } from '../../config/modelos.js';
 import { Info } from 'lucide-react';
 
 export default function Step2Equipo({ formData, updateField, errors }) {
@@ -23,7 +23,7 @@ export default function Step2Equipo({ formData, updateField, errors }) {
           value={formData.modelo_inbody}
           onChange={function (v) { updateField('modelo_inbody', v); }}
           placeholder="Selecciona tu modelo"
-          options={MODELOS_INBODY.map(function (m) {
+          options={getModelosVigentes().map(function (m) {
             return { value: m.id, label: m.label };
           })}
           error={errors.modelo_inbody}

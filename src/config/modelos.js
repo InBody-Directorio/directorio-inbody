@@ -1,19 +1,24 @@
 /**
  * Modelos de equipos InBody disponibles en el directorio.
  *
- * Convención de nombres: SIN espacio entre "InBody" y el número (InBody970S, no InBody 970).
+ * Catálogo final aprobado por InBody México (Aza) — Junio 2026:
+ * - Descontinuados (siguen visibles para legacy, pero ya no se ofrecen): 570, 370S, 270, 230
+ * - Borrados del catálogo (línea personal/consumer): Dial, H20N, Band2
+ * - Renombrado: BPBio → BPBIO750
+ * - Nuevos: BWA (Body Water Analyzer), S10 (hospitalario)
  *
- * Campo `descontinuado`: marca modelos antiguos. Por ahora todos en false,
- * se actualizará cuando InBody nos pase la lista oficial (Tanda 2).
+ * Convención de IDs: SIN espacio, SIN guión, todo minúscula.
+ * Convención de labels: SIN espacio entre "InBody" y el número/sufijo.
+ *
+ * Campo `descontinuado`: marca modelos que ya no se venden. Sigue apareciendo
+ * en perfiles legacy pero no en el selector de registro.
  *
  * Campo `imagen`: ruta a la imagen PNG transparente en /public/modelos/.
  * Si no existe el archivo, el componente ImagenModelo muestra un placeholder elegante.
- *
- * Para agregar imágenes oficiales: ponerlas en /public/modelos/ con el nombre
- * exacto del id, ejemplo: /public/modelos/inbody970s.png
  */
 
 export const MODELOS_INBODY = [
+  // Línea profesional vigente — premium
   {
     id: 'inbody970',
     label: 'InBody970',
@@ -28,6 +33,8 @@ export const MODELOS_INBODY = [
     descontinuado: false,
     imagen: '/modelos/inbody970s.png',
   },
+
+  // Línea profesional vigente — alta gama
   {
     id: 'inbody770',
     label: 'InBody770',
@@ -42,19 +49,14 @@ export const MODELOS_INBODY = [
     descontinuado: false,
     imagen: '/modelos/inbody770s.png',
   },
+
+  // Línea profesional vigente — media
   {
     id: 'inbody580',
     label: 'InBody580',
     descripcion: 'Análisis profesional para consultorios y gimnasios.',
     descontinuado: false,
     imagen: '/modelos/inbody580.png',
-  },
-  {
-    id: 'inbody570',
-    label: 'InBody570',
-    descripcion: 'Equipo profesional con función adicional de hidratación.',
-    descontinuado: false,
-    imagen: '/modelos/inbody570.png',
   },
   {
     id: 'inbody380',
@@ -64,26 +66,14 @@ export const MODELOS_INBODY = [
     imagen: '/modelos/inbody380.png',
   },
   {
-    id: 'inbody370s',
-    label: 'InBody370S',
-    descripcion: 'Modelo intermedio actualizado para análisis profesional.',
-    descontinuado: false,
-    imagen: '/modelos/inbody370s.png',
-  },
-  {
     id: 'inbody370',
     label: 'InBody370',
     descripcion: 'Modelo intermedio para análisis profesional.',
     descontinuado: false,
     imagen: '/modelos/inbody370.png',
   },
-  {
-    id: 'inbody270',
-    label: 'InBody270',
-    descripcion: 'Compacto y eficaz, ideal para fitness y gimnasios.',
-    descontinuado: false,
-    imagen: '/modelos/inbody270.png',
-  },
+
+  // Línea profesional vigente — entrada
   {
     id: 'inbody270s',
     label: 'InBody270S',
@@ -92,47 +82,69 @@ export const MODELOS_INBODY = [
     imagen: '/modelos/inbody270s.png',
   },
   {
-    id: 'inbody230',
-    label: 'InBody230',
-    descripcion: 'Equipo de entrada para análisis básico.',
-    descontinuado: false,
-    imagen: '/modelos/inbody230.png',
-  },
-  {
     id: 'inbody120',
     label: 'InBody120',
     descripcion: 'Equipo portátil para mediciones rápidas.',
     descontinuado: false,
     imagen: '/modelos/inbody120.png',
   },
+
+  // Línea hospitalaria
   {
-    id: 'inbodyh20n',
-    label: 'InBodyH20N',
-    descripcion: 'Báscula inteligente de uso doméstico y profesional.',
+    id: 'inbodys10',
+    label: 'InBodyS10',
+    descripcion: 'Análisis de composición corporal para uso hospitalario en cama.',
     descontinuado: false,
-    imagen: '/modelos/inbodyh20n.png',
+    imagen: '/modelos/inbodys10.png',
+  },
+
+  // Línea especializada
+  {
+    id: 'inbodybwa',
+    label: 'InBodyBWA',
+    descripcion: 'Body Water Analyzer — análisis de hidratación corporal.',
+    descontinuado: false,
+    imagen: '/modelos/inbodybwa.png',
   },
   {
-    id: 'inbodydial',
-    label: 'InBodyDial',
-    descripcion: 'Báscula compacta para uso personal.',
+    id: 'bpbio750',
+    label: 'BPBIO750',
+    descripcion: 'Monitor automático de presión arterial.',
     descontinuado: false,
-    imagen: '/modelos/inbodydial.png',
+    imagen: '/modelos/bpbio750.png',
+  },
+
+  // Descontinuados (ya no se venden, pero quedan visibles para perfiles legacy)
+  {
+    id: 'inbody570',
+    label: 'InBody570',
+    descripcion: 'Equipo profesional con función adicional de hidratación.',
+    descontinuado: true,
+    imagen: '/modelos/inbody570.png',
   },
   {
-    id: 'inbodyband2',
-    label: 'InBodyBand2',
-    descripcion: 'Wearable de seguimiento corporal.',
-    descontinuado: false,
-    imagen: '/modelos/inbodyband2.png',
+    id: 'inbody370s',
+    label: 'InBody370S',
+    descripcion: 'Modelo intermedio actualizado para análisis profesional.',
+    descontinuado: true,
+    imagen: '/modelos/inbody370s.png',
   },
   {
-    id: 'inbodybpbio',
-    label: 'InBodyBPBio',
-    descripcion: 'Monitor de presión arterial.',
-    descontinuado: false,
-    imagen: '/modelos/inbodybpbio.png',
+    id: 'inbody270',
+    label: 'InBody270',
+    descripcion: 'Compacto y eficaz, ideal para fitness y gimnasios.',
+    descontinuado: true,
+    imagen: '/modelos/inbody270.png',
   },
+  {
+    id: 'inbody230',
+    label: 'InBody230',
+    descripcion: 'Equipo de entrada para análisis básico.',
+    descontinuado: true,
+    imagen: '/modelos/inbody230.png',
+  },
+
+  // Otro
   {
     id: 'otro',
     label: 'Otro modelo',
@@ -144,12 +156,14 @@ export const MODELOS_INBODY = [
 
 /**
  * Obtiene el label de un modelo por su ID.
- * Hace fallback al ID capitalizado si no se encuentra (para registros legacy).
+ * Hace fallback al ID capitalizado si no se encuentra (para registros legacy
+ * que tenían IDs como "inbodydial", "inbodyh20n", "inbodyband2", "inbodybpbio").
  */
 export function getModeloLabel(id) {
   if (!id) return 'Sin equipo';
   const found = MODELOS_INBODY.find(function (m) { return m.id === id; });
   if (found) return found.label;
+  // Fallback para legacy: capitalizar primera letra y devolver
   const clean = id.replace(/[-\s_]/g, '');
   return clean.charAt(0).toUpperCase() + clean.slice(1);
 }
@@ -176,4 +190,12 @@ export function getModeloImagen(id) {
  */
 export function getModelo(id) {
   return MODELOS_INBODY.find(function (m) { return m.id === id; });
+}
+
+/**
+ * Devuelve solo los modelos NO descontinuados, para el selector del registro.
+ * Los descontinuados siguen apareciendo en perfiles legacy via getModeloLabel.
+ */
+export function getModelosVigentes() {
+  return MODELOS_INBODY.filter(function (m) { return !m.descontinuado; });
 }

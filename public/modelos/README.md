@@ -1,36 +1,35 @@
 # Imágenes oficiales de modelos InBody
 
-Esta carpeta contiene las imágenes que aparecen en la tarjeta de cada profesional del directorio.
+PNGs con fondo transparente, máximo 1500px de lado largo, optimizados.
 
-## Cómo agregar imágenes
+## ✅ Imágenes incluidas (12)
 
-1. Consigue las imágenes oficiales con **InBody México** (Aza puede pedírselas a su equipo de marketing)
-2. Idealmente sean PNGs con fondo transparente, cuadradas (ej. 400x400 px)
-3. Nómbralas con el `id` del modelo en minúsculas, sin espacios. Ejemplos:
-   - `inbody970.png`
-   - `inbody970s.png`
-   - `inbody770.png`
-   - `inbody770s.png`
-   - `inbody580.png`
-   - `inbody570.png`
-   - `inbody380.png`
-   - `inbody370.png`
-   - `inbody370s.png`
-   - `inbody270.png`
-   - `inbody270s.png`
-   - `inbody230.png`
-   - `inbody120.png`
-   - `inbodyh20n.png`
-   - `inbodydial.png`
-   - `inbodyband2.png`
-   - `inbodybpbio.png`
-4. Súbelas a esta carpeta `/public/modelos/`
-5. Vercel deploya automáticamente y aparecen en las tarjetas
+- inbody120.png
+- inbody270.png
+- inbody270s.png
+- inbody370s.png
+- inbody380.png
+- inbody570.png
+- inbody580.png
+- inbody770.png
+- inbody770s.png
+- inbody970.png
+- inbodybwa.png
+- inbodys10.png
 
-## Mientras no haya imágenes
+## ⏳ Imágenes pendientes de InBody (4)
 
-El componente `ImagenModelo` muestra un placeholder elegante (degradado rojo soft con ícono de sparkles). No se ve roto, queda profesional. Cuando lleguen las imágenes oficiales, simplemente las subes y reemplazan el placeholder automáticamente.
+Cuando Aza nos pase las imágenes, colocarlas con estos nombres exactos:
 
-## Por qué no descargamos las imágenes del sitio de InBody
+- `inbody970s.png` (la que mandó era del 970 normal, no del S)
+- `inbody370.png` (la que mandó era del 370S, no del 370 normal)
+- `inbody230.png` (no vino, aunque ya quedó descontinuado, sirve para registros legacy)
+- `bpbio750.png` (no vino)
 
-InBody USA bloquea descargas directas de sus imágenes (responden 403). Además sería usar su IP sin permiso. Lo correcto es pedírselas a InBody México directamente.
+Mientras no estén, el componente `ImagenModelo` muestra un placeholder elegante automáticamente.
+
+## Convención
+
+- Nombre = id del modelo en `src/config/modelos.js`
+- Sin espacios, sin guiones, todo minúscula
+- PNG transparente, max 1500px lado largo, max 500KB
