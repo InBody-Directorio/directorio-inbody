@@ -9,7 +9,7 @@ export default function AdminSidebar({ admin, pendientesCount, onLogout }) {
     <aside className="w-56 md:w-64 bg-white border-r border-neutral-200 flex flex-col flex-shrink-0 min-h-screen">
       <div className="p-5 border-b border-neutral-200">
         <div className="flex items-center gap-2.5">
-          <InBodyLogo className="h-7 w-auto text-inbody-red" />
+          <InBodyLogo size={22} />
           <div>
             <div className="text-[9px] uppercase tracking-[0.14em] text-neutral-500 font-semibold leading-tight">Panel</div>
             <div className="text-[9px] uppercase tracking-[0.14em] text-neutral-900 font-semibold leading-tight">Administrativo</div>

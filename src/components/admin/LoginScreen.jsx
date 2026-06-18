@@ -51,7 +51,7 @@ export default function LoginScreen() {
     <div className="min-h-screen bg-neutral-50 flex items-center justify-center px-4 py-8">
       <div className="max-w-md w-full">
         <div className="text-center mb-8">
-          <InBodyLogo className="h-10 w-auto text-inbody-red mx-auto mb-3" />
+          <InBodyLogo size={36} className="mx-auto mb-3" />
           <div className="text-[11px] uppercase tracking-[0.14em] text-neutral-500 font-semibold">Panel Administrativo</div>
         </div>
 
