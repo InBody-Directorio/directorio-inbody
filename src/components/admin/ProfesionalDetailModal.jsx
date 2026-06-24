@@ -3,7 +3,8 @@ import { X, MapPin, Phone, Mail, Globe, Instagram, Facebook, Sparkles, CheckCirc
 import mapboxgl from 'mapbox-gl';
 import { MAPBOX_TOKEN } from '../../lib/mapbox.js';
 import { getEspecialidadLabel } from '../../config/especialidades.js';
-import { getModeloLabel } from '../../config/modelos.js';
+import { getModeloLabel, isModeloDescontinuado } from '../../config/modelos.js';
+import ImagenModelo from '../ImagenModelo.jsx';
 import { aprobarProfesional, rechazarProfesional, restaurarProfesional } from '../../lib/adminApi.js';
 
 mapboxgl.accessToken = MAPBOX_TOKEN;
@@ -78,6 +79,7 @@ export default function ProfesionalDetailModal({ profesional, onClose, onAction 
 
   const especialidad = getEspecialidadLabel(profesional.especialidad);
   const modelo = getModeloLabel(profesional.modelo_inbody);
+  const descontinuado = isModeloDescontinuado(profesional.modelo_inbody);
 
   async function handleAprobar() {
     setLoading(true); setError('');
@@ -151,9 +153,16 @@ export default function ProfesionalDetailModal({ profesional, onClose, onAction 
 
             <Section title="Equipo InBody">
               <div className="space-y-2.5">
-                <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-inbody-red-soft border border-inbody-red/15 text-xs font-medium text-inbody-red-dark">
-                  <Sparkles className="w-3 h-3" />
-                  {modelo}
+                <div className="flex items-center gap-3 p-3 bg-inbody-red-soft/40 border border-inbody-red/15 rounded-2xl">
+                  <ImagenModelo modeloId={profesional.modelo_inbody} size="md" className="!bg-white flex-shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-semibold text-inbody-red-dark">{modelo}</div>
+                    {descontinuado && (
+                      <div className="inline-flex items-center mt-1 px-2 py-0.5 rounded-md bg-amber-50 border border-amber-200 text-[9px] font-semibold text-amber-800 uppercase tracking-wider">
+                        Modelo descontinuado
+                      </div>
+                    )}
+                  </div>
                 </div>
                 {profesional.numero_serie ? (
                   <div className="flex items-center gap-2 p-3 bg-amber-50 border border-amber-200 rounded-xl">

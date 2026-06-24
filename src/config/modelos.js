@@ -1,20 +1,12 @@
 /**
  * Modelos de equipos InBody disponibles en el directorio.
  *
- * Catálogo final aprobado por InBody México (Aza) — Junio 2026:
- * - Descontinuados (siguen visibles para legacy, pero ya no se ofrecen): 570, 370S, 270, 230
- * - Borrados del catálogo (línea personal/consumer): Dial, H20N, Band2
- * - Renombrado: BPBio → BPBIO750
- * - Nuevos: BWA (Body Water Analyzer), S10 (hospitalario)
+ * Catálogo final aprobado por InBody México (Aza) — Junio 2026.
  *
- * Convención de IDs: SIN espacio, SIN guión, todo minúscula.
- * Convención de labels: SIN espacio entre "InBody" y el número/sufijo.
- *
- * Campo `descontinuado`: marca modelos que ya no se venden. Sigue apareciendo
- * en perfiles legacy pero no en el selector de registro.
- *
- * Campo `imagen`: ruta a la imagen PNG transparente en /public/modelos/.
- * Si no existe el archivo, el componente ImagenModelo muestra un placeholder elegante.
+ * IMPORTANTE: Todas las funciones de búsqueda son CASE-INSENSITIVE.
+ * En la base de datos pueden existir registros legacy con IDs como
+ * "Inbody770", "INBODY570", "inbody770", etc. Las funciones normalizan
+ * a minúsculas antes de comparar para evitar mismatches.
  */
 
 export const MODELOS_INBODY = [
@@ -114,7 +106,7 @@ export const MODELOS_INBODY = [
     imagen: '/modelos/bpbio750.png',
   },
 
-  // Descontinuados (ya no se venden, pero quedan visibles para perfiles legacy)
+  // Descontinuados (siguen visibles en el selector y en perfiles legacy)
   {
     id: 'inbody570',
     label: 'InBody570',
@@ -155,47 +147,87 @@ export const MODELOS_INBODY = [
 ];
 
 /**
- * Obtiene el label de un modelo por su ID.
- * Hace fallback al ID capitalizado si no se encuentra (para registros legacy
- * que tenían IDs como "inbodydial", "inbodyh20n", "inbodyband2", "inbodybpbio").
+ * Normaliza un ID a minúsculas y sin espacios/guiones para búsqueda.
  */
-export function getModeloLabel(id) {
-  if (!id) return 'Sin equipo';
-  const found = MODELOS_INBODY.find(function (m) { return m.id === id; });
-  if (found) return found.label;
-  // Fallback para legacy: capitalizar primera letra y devolver
-  const clean = id.replace(/[-\s_]/g, '');
-  return clean.charAt(0).toUpperCase() + clean.slice(1);
+function normalize(id) {
+  if (!id) return '';
+  return String(id).toLowerCase().replace(/[-\s_]/g, '');
 }
 
 /**
- * Devuelve true si el modelo está descontinuado.
+ * Busca un modelo por ID (case-insensitive).
+ * Encuentra "Inbody770", "INBODY770", "inbody770", "InBody770", etc.
+ */
+export function getModelo(id) {
+  if (!id) return null;
+  const norm = normalize(id);
+  return MODELOS_INBODY.find(function (m) { return normalize(m.id) === norm; }) || null;
+}
+
+/**
+ * Devuelve el label correctamente formateado del modelo.
+ * Si el modelo existe en el catálogo, devuelve su label oficial (ej: "InBody770").
+ * Si NO existe (legacy desconocido), intenta formatearlo bonito.
+ */
+export function getModeloLabel(id) {
+  if (!id) return 'Sin equipo';
+  const found = getModelo(id);
+  if (found) return found.label;
+
+  // Fallback para IDs legacy desconocidos: intentar formatear como "InBody{NNN}"
+  const norm = normalize(id);
+  // Si empieza con "inbody" seguido de números/letras, formatear como "InBody{...}"
+  const match = norm.match(/^inbody(.+)$/);
+  if (match) {
+    return 'InBody' + match[1].toUpperCase();
+  }
+  // Si no, capitalizar primera letra
+  return id.charAt(0).toUpperCase() + id.slice(1);
+}
+
+/**
+ * Devuelve true si el modelo está descontinuado (case-insensitive).
  */
 export function isModeloDescontinuado(id) {
-  const found = MODELOS_INBODY.find(function (m) { return m.id === id; });
+  const found = getModelo(id);
   return found ? !!found.descontinuado : false;
 }
 
 /**
- * Obtiene la ruta a la imagen del modelo.
+ * Devuelve la ruta a la imagen del modelo (case-insensitive).
  * Devuelve null si no tiene imagen registrada.
  */
 export function getModeloImagen(id) {
-  const found = MODELOS_INBODY.find(function (m) { return m.id === id; });
+  const found = getModelo(id);
   return found ? found.imagen : null;
 }
 
 /**
- * Obtiene todo el objeto del modelo por ID.
+ * Devuelve TODOS los modelos para el selector del registro.
+ * Los descontinuados aparecen al final con sufijo "(Descontinuado)" en el label.
+ * Lo pidió Aza explícitamente: hay que dejarlos visibles.
  */
-export function getModelo(id) {
-  return MODELOS_INBODY.find(function (m) { return m.id === id; });
+export function getModelosParaSelector() {
+  const vigentes = MODELOS_INBODY.filter(function (m) {
+    return !m.descontinuado && m.id !== 'otro';
+  });
+  const descontinuados = MODELOS_INBODY.filter(function (m) { return m.descontinuado; });
+  const otro = MODELOS_INBODY.filter(function (m) { return m.id === 'otro'; });
+
+  // Marcar descontinuados con sufijo en el label para que el usuario lo vea claro
+  const descontinuadosMarcados = descontinuados.map(function (m) {
+    return { ...m, label: m.label + ' (Descontinuado)' };
+  });
+
+  return vigentes.concat(descontinuadosMarcados).concat(otro);
 }
 
 /**
- * Devuelve solo los modelos NO descontinuados, para el selector del registro.
- * Los descontinuados siguen apareciendo en perfiles legacy via getModeloLabel.
+ * Devuelve solo los modelos NO descontinuados (excluyendo "otro").
+ * Útil para filtros o vistas donde no quieres mostrar los descontinuados.
  */
 export function getModelosVigentes() {
-  return MODELOS_INBODY.filter(function (m) { return !m.descontinuado; });
+  return MODELOS_INBODY.filter(function (m) {
+    return !m.descontinuado && m.id !== 'otro';
+  });
 }

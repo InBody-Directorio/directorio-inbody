@@ -11,7 +11,7 @@ import Step4Contacto from '../components/registro/Step4Contacto.jsx';
 import ResumenSolicitud from '../components/registro/ResumenSolicitud.jsx';
 import SuccessScreen from '../components/registro/SuccessScreen.jsx';
 import { ESPECIALIDADES } from '../config/especialidades.js';
-import { MODELOS_INBODY } from '../config/modelos.js';
+import { MODELOS_INBODY, getModelo } from '../config/modelos.js';
 import { uploadFoto, enviarSolicitud } from '../lib/registro.js';
 
 const STEPS = [
@@ -146,7 +146,7 @@ export default function RegistroPage() {
 
       setSubmitProgress('Enviando tu solicitud...');
       const especialidadObj = ESPECIALIDADES.find(function (e) { return e.id === formData.especialidad; });
-      const modeloObj = MODELOS_INBODY.find(function (m) { return m.id === formData.modelo_inbody; });
+      const modeloObj = getModelo(formData.modelo_inbody);
 
       await enviarSolicitud({
         nombre: formData.nombre,

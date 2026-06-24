@@ -1,10 +1,10 @@
 import { Edit2 } from 'lucide-react';
 import { ESPECIALIDADES } from '../../config/especialidades.js';
-import { MODELOS_INBODY } from '../../config/modelos.js';
+import { MODELOS_INBODY, getModelo } from '../../config/modelos.js';
 
 export default function ResumenSolicitud({ formData, onEditStep, fotoPreviews }) {
   const especialidad = ESPECIALIDADES.find(function (e) { return e.id === formData.especialidad; });
-  const modelo = MODELOS_INBODY.find(function (m) { return m.id === formData.modelo_inbody; });
+  const modelo = getModelo(formData.modelo_inbody);
 
   return (
     <div className="space-y-5">

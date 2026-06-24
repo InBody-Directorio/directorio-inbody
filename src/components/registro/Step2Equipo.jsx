@@ -1,9 +1,14 @@
 import { FormField, TextInput, Select } from './FormFields.jsx';
 import PhotoUpload from './PhotoUpload.jsx';
-import { getModelosVigentes } from '../../config/modelos.js';
+import { getModelosParaSelector, getModelo, isModeloDescontinuado } from '../../config/modelos.js';
+import ImagenModelo from '../ImagenModelo.jsx';
 import { Info } from 'lucide-react';
 
 export default function Step2Equipo({ formData, updateField, errors }) {
+  const modeloSeleccionado = formData.modelo_inbody ? getModelo(formData.modelo_inbody) : null;
+  const isDescontinuado = formData.modelo_inbody ? isModeloDescontinuado(formData.modelo_inbody) : false;
+  const showPreview = modeloSeleccionado && formData.modelo_inbody !== 'otro';
+
   return (
     <div className="space-y-5">
       <div>
@@ -23,12 +28,34 @@ export default function Step2Equipo({ formData, updateField, errors }) {
           value={formData.modelo_inbody}
           onChange={function (v) { updateField('modelo_inbody', v); }}
           placeholder="Selecciona tu modelo"
-          options={getModelosVigentes().map(function (m) {
+          options={getModelosParaSelector().map(function (m) {
             return { value: m.id, label: m.label };
           })}
           error={errors.modelo_inbody}
         />
       </FormField>
+
+      {showPreview && (
+        <div className="flex items-center gap-4 p-3 bg-inbody-red-soft/40 border border-inbody-red/15 rounded-2xl">
+          <ImagenModelo modeloId={formData.modelo_inbody} size="md" className="!bg-white" />
+          <div className="flex-1 min-w-0">
+            <div className="text-[10px] uppercase tracking-wider text-inbody-red font-semibold mb-0.5">
+              Equipo seleccionado
+            </div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <div className="text-sm font-semibold text-neutral-900">{modeloSeleccionado.label}</div>
+              {isDescontinuado && (
+                <span className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-amber-50 border border-amber-200 text-[9px] font-semibold text-amber-800 uppercase tracking-wider">
+                  Modelo descontinuado
+                </span>
+              )}
+            </div>
+            {modeloSeleccionado.descripcion && (
+              <div className="text-xs text-neutral-600 leading-relaxed mt-0.5">{modeloSeleccionado.descripcion}</div>
+            )}
+          </div>
+        </div>
+      )}
 
       <FormField
         label="Número de serie del equipo"

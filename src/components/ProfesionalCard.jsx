@@ -1,10 +1,12 @@
 import { MapPin, Activity, Sparkles } from 'lucide-react';
 import { getEspecialidadLabel } from '../config/especialidades.js';
-import { getModeloLabel } from '../config/modelos.js';
+import { getModeloLabel, isModeloDescontinuado } from '../config/modelos.js';
+import ImagenModelo from './ImagenModelo.jsx';
 
 export default function ProfesionalCard({ profesional, ubicacion, isSelected, onClick }) {
   const especialidad = getEspecialidadLabel(profesional.especialidad);
   const modelo = getModeloLabel(profesional.modelo_inbody);
+  const descontinuado = isModeloDescontinuado(profesional.modelo_inbody);
   const foto = profesional.foto_perfil_url || (ubicacion && ubicacion.foto_lugar_url);
 
   return (
@@ -45,9 +47,16 @@ export default function ProfesionalCard({ profesional, ubicacion, isSelected, on
               <span className="truncate">{ubicacion.ciudad}, {ubicacion.estado}</span>
             </div>
           )}
-          <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-neutral-100 text-[10px] font-medium text-neutral-700 border border-neutral-200/60">
-            <Sparkles className="w-2.5 h-2.5 text-inbody-red" />
-            {modelo}
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <div className="inline-flex items-center gap-1.5 pl-0.5 pr-2 py-0.5 rounded-md bg-neutral-100 border border-neutral-200/60">
+              <ImagenModelo modeloId={profesional.modelo_inbody} size="xs" className="!w-6 !h-6 !rounded !bg-white" />
+              <span className="text-[10px] font-semibold text-neutral-700">{modelo}</span>
+            </div>
+            {descontinuado && (
+              <span className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-amber-50 border border-amber-200 text-[9px] font-bold text-amber-900 uppercase tracking-wider">
+                Descontinuado
+              </span>
+            )}
           </div>
         </div>
       </div>

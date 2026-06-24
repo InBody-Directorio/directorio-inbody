@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { X, MapPin, Phone, Mail, Globe, Instagram, Facebook, Sparkles, Navigation, Share2, Check } from 'lucide-react';
 import { getEspecialidadLabel } from '../config/especialidades.js';
-import { getModeloLabel } from '../config/modelos.js';
+import { getModeloLabel, isModeloDescontinuado } from '../config/modelos.js';
+import ImagenModelo from './ImagenModelo.jsx';
 
 export default function ProfesionalModal({ profesional, ubicacion, onClose }) {
   const [shareState, setShareState] = useState('idle'); // idle | copied
@@ -25,6 +26,7 @@ export default function ProfesionalModal({ profesional, ubicacion, onClose }) {
 
   const especialidad = getEspecialidadLabel(profesional.especialidad);
   const modelo = getModeloLabel(profesional.modelo_inbody);
+  const descontinuado = isModeloDescontinuado(profesional.modelo_inbody);
   const foto = profesional.foto_perfil_url || (ubicacion && ubicacion.foto_lugar_url) || '';
 
   const whatsappLink = profesional.whatsapp
@@ -107,9 +109,16 @@ export default function ProfesionalModal({ profesional, ubicacion, onClose }) {
             </button>
           </div>
 
-          <div className="absolute top-3 left-3 inline-flex items-center gap-1.5 bg-white/95 backdrop-blur-md px-2.5 py-1 rounded-full text-[11px] font-semibold text-neutral-900 shadow-sm">
-            <Sparkles className="w-3 h-3 text-inbody-red" />
-            {modelo}
+          <div className="absolute top-3 left-3 flex flex-col items-start gap-1.5">
+            <div className="inline-flex items-center gap-2 bg-white/95 backdrop-blur-md pl-1.5 pr-3 py-1.5 rounded-full shadow-md border border-neutral-200/50">
+              <ImagenModelo modeloId={profesional.modelo_inbody} size="xs" className="!w-7 !h-7 !rounded-full !bg-neutral-50" />
+              <span className="text-[12px] font-semibold text-neutral-900">{modelo}</span>
+            </div>
+            {descontinuado && (
+              <div className="inline-flex items-center px-2 py-0.5 rounded-full bg-amber-100/95 backdrop-blur-md border border-amber-300 text-[10px] font-bold text-amber-900 uppercase tracking-wider shadow-sm">
+                Modelo descontinuado
+              </div>
+            )}
           </div>
 
           <div className="absolute bottom-3 left-3 inline-flex items-center gap-1.5 bg-black/55 backdrop-blur-md px-2.5 py-1 rounded-full">
@@ -129,6 +138,22 @@ export default function ProfesionalModal({ profesional, ubicacion, onClose }) {
               {profesional.descripcion_breve}
             </p>
           )}
+
+          {/* Sección Equipo InBody — visible y prominente */}
+          <div className="flex items-center gap-4 p-4 bg-inbody-red-soft/40 border border-inbody-red/15 rounded-2xl mb-5">
+            <ImagenModelo modeloId={profesional.modelo_inbody} size="lg" className="!bg-white flex-shrink-0" />
+            <div className="flex-1 min-w-0">
+              <div className="text-[10px] uppercase tracking-[0.14em] text-inbody-red font-semibold mb-1">
+                Equipo InBody
+              </div>
+              <div className="text-base font-semibold text-neutral-900 mb-1">{modelo}</div>
+              {descontinuado && (
+                <div className="inline-flex items-center px-2 py-0.5 rounded-md bg-amber-50 border border-amber-200 text-[10px] font-bold text-amber-900 uppercase tracking-wider">
+                  Modelo descontinuado
+                </div>
+              )}
+            </div>
+          </div>
 
           {ubicacion && (
             <div className="flex items-start gap-3 p-4 bg-neutral-50 rounded-2xl mb-5 border border-neutral-150">
