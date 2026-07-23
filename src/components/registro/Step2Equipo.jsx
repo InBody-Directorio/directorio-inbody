@@ -1,12 +1,13 @@
 import { FormField, TextInput, Select } from './FormFields.jsx';
 import PhotoUpload from './PhotoUpload.jsx';
-import { getModelosParaSelector, getModelo, isModeloDescontinuado } from '../../config/modelos.js';
+import { getModelosParaSelector, getModelo, isModeloDescontinuado, isModeloNuevaGeneracion } from '../../config/modelos.js';
 import ImagenModelo from '../ImagenModelo.jsx';
 import { Info } from 'lucide-react';
 
 export default function Step2Equipo({ formData, updateField, errors }) {
   const modeloSeleccionado = formData.modelo_inbody ? getModelo(formData.modelo_inbody) : null;
   const isDescontinuado = formData.modelo_inbody ? isModeloDescontinuado(formData.modelo_inbody) : false;
+  const isNuevaGen = formData.modelo_inbody ? isModeloNuevaGeneracion(formData.modelo_inbody) : false;
   const showPreview = modeloSeleccionado && formData.modelo_inbody !== 'otro';
 
   return (
@@ -47,6 +48,11 @@ export default function Step2Equipo({ formData, updateField, errors }) {
               {isDescontinuado && (
                 <span className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-amber-50 border border-amber-200 text-[9px] font-semibold text-amber-800 uppercase tracking-wider">
                   Modelo descontinuado
+                </span>
+              )}
+              {isNuevaGen && (
+                <span className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-inbody-red-soft border border-inbody-red/20 text-[9px] font-semibold text-inbody-red uppercase tracking-wider">
+                  Nueva generación
                 </span>
               )}
             </div>

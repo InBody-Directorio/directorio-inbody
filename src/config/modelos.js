@@ -23,6 +23,7 @@ export const MODELOS_INBODY = [
     label: 'InBody970S',
     descripcion: 'Versión flagship con tecnología 3MHz.',
     descontinuado: false,
+    nuevaGeneracion: true,
     imagen: '/modelos/inbody970s.png',
   },
 
@@ -39,6 +40,7 @@ export const MODELOS_INBODY = [
     label: 'InBody770S',
     descripcion: 'Versión actualizada del 770 con tecnología 3MHz.',
     descontinuado: false,
+    nuevaGeneracion: true,
     imagen: '/modelos/inbody770s.png',
   },
 
@@ -48,6 +50,7 @@ export const MODELOS_INBODY = [
     label: 'InBody580',
     descripcion: 'Análisis profesional para consultorios y gimnasios.',
     descontinuado: false,
+    nuevaGeneracion: true,
     imagen: '/modelos/inbody580.png',
   },
   {
@@ -55,6 +58,7 @@ export const MODELOS_INBODY = [
     label: 'InBody380',
     descripcion: 'Solución compacta para consultorios.',
     descontinuado: false,
+    nuevaGeneracion: true,
     imagen: '/modelos/inbody380.png',
   },
   {
@@ -103,6 +107,10 @@ export const MODELOS_INBODY = [
     label: 'BPBIO750',
     descripcion: 'Monitor automático de presión arterial.',
     descontinuado: false,
+    // Pedido de ventas (jul 2026): NO aparece en el selector del registro,
+    // pero se conserva aquí como fallback para registros existentes en BD
+    // (label, imagen y detección siguen funcionando).
+    ocultoEnSelector: true,
     imagen: '/modelos/bpbio750.png',
   },
 
@@ -194,6 +202,16 @@ export function isModeloDescontinuado(id) {
 }
 
 /**
+ * Devuelve true si el modelo es de nueva generación (case-insensitive).
+ * Leyenda "Nueva generación" pedida por ventas (jul 2026) para:
+ * InBody380, InBody580, InBody970S, InBody770S.
+ */
+export function isModeloNuevaGeneracion(id) {
+  const found = getModelo(id);
+  return found ? !!found.nuevaGeneracion : false;
+}
+
+/**
  * Devuelve la ruta a la imagen del modelo (case-insensitive).
  * Devuelve null si no tiene imagen registrada.
  */
@@ -209,7 +227,7 @@ export function getModeloImagen(id) {
  */
 export function getModelosParaSelector() {
   const vigentes = MODELOS_INBODY.filter(function (m) {
-    return !m.descontinuado && m.id !== 'otro';
+    return !m.descontinuado && m.id !== 'otro' && !m.ocultoEnSelector;
   });
   const descontinuados = MODELOS_INBODY.filter(function (m) { return m.descontinuado; });
   const otro = MODELOS_INBODY.filter(function (m) { return m.id === 'otro'; });

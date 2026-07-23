@@ -1,12 +1,14 @@
 import { MapPin, Activity, Sparkles } from 'lucide-react';
 import { getEspecialidadLabel } from '../config/especialidades.js';
-import { getModeloLabel, isModeloDescontinuado } from '../config/modelos.js';
+import { getModeloLabel, isModeloNuevaGeneracion } from '../config/modelos.js';
 import ImagenModelo from './ImagenModelo.jsx';
 
 export default function ProfesionalCard({ profesional, ubicacion, isSelected, onClick }) {
   const especialidad = getEspecialidadLabel(profesional.especialidad);
   const modelo = getModeloLabel(profesional.modelo_inbody);
-  const descontinuado = isModeloDescontinuado(profesional.modelo_inbody);
+  // Ficha pública: por pedido de ventas (jul 2026) aquí NO se muestra la
+  // etiqueta de descontinuado (solo se conserva en panel admin y registro).
+  const nuevaGeneracion = isModeloNuevaGeneracion(profesional.modelo_inbody);
   const foto = profesional.foto_perfil_url || (ubicacion && ubicacion.foto_lugar_url);
 
   return (
@@ -52,9 +54,9 @@ export default function ProfesionalCard({ profesional, ubicacion, isSelected, on
               <ImagenModelo modeloId={profesional.modelo_inbody} size="xs" className="!w-6 !h-6 !rounded !bg-white" />
               <span className="text-[10px] font-semibold text-neutral-700">{modelo}</span>
             </div>
-            {descontinuado && (
-              <span className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-amber-50 border border-amber-200 text-[9px] font-bold text-amber-900 uppercase tracking-wider">
-                Descontinuado
+            {nuevaGeneracion && (
+              <span className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-inbody-red-soft border border-inbody-red/20 text-[9px] font-bold text-inbody-red uppercase tracking-wider">
+                Nueva generación
               </span>
             )}
           </div>

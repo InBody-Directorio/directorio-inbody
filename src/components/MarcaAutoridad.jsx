@@ -16,7 +16,7 @@ export default function MarcaAutoridad() {
     },
     {
       icon: <Building2 className="w-4 h-4" />,
-      value: '4,000+',
+      value: '8,000+',
       label: 'publicaciones',
       description: 'Validado científicamente en estudios médicos a nivel mundial.',
     },

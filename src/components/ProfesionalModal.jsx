@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { X, MapPin, Phone, Mail, Globe, Instagram, Facebook, Sparkles, Navigation, Share2, Check } from 'lucide-react';
 import { getEspecialidadLabel } from '../config/especialidades.js';
-import { getModeloLabel, isModeloDescontinuado } from '../config/modelos.js';
+import { getModeloLabel, isModeloNuevaGeneracion } from '../config/modelos.js';
 import ImagenModelo from './ImagenModelo.jsx';
 
 export default function ProfesionalModal({ profesional, ubicacion, onClose }) {
@@ -26,7 +26,9 @@ export default function ProfesionalModal({ profesional, ubicacion, onClose }) {
 
   const especialidad = getEspecialidadLabel(profesional.especialidad);
   const modelo = getModeloLabel(profesional.modelo_inbody);
-  const descontinuado = isModeloDescontinuado(profesional.modelo_inbody);
+  // Ficha pública: por pedido de ventas (jul 2026) aquí NO se muestra la
+  // etiqueta de descontinuado (solo se conserva en panel admin y registro).
+  const nuevaGeneracion = isModeloNuevaGeneracion(profesional.modelo_inbody);
   const foto = profesional.foto_perfil_url || (ubicacion && ubicacion.foto_lugar_url) || '';
 
   const whatsappLink = profesional.whatsapp
@@ -114,9 +116,9 @@ export default function ProfesionalModal({ profesional, ubicacion, onClose }) {
               <ImagenModelo modeloId={profesional.modelo_inbody} size="xs" className="!w-7 !h-7 !rounded-full !bg-neutral-50" />
               <span className="text-[12px] font-semibold text-neutral-900">{modelo}</span>
             </div>
-            {descontinuado && (
-              <div className="inline-flex items-center px-2 py-0.5 rounded-full bg-amber-100/95 backdrop-blur-md border border-amber-300 text-[10px] font-bold text-amber-900 uppercase tracking-wider shadow-sm">
-                Modelo descontinuado
+            {nuevaGeneracion && (
+              <div className="inline-flex items-center px-2 py-0.5 rounded-full bg-white/95 backdrop-blur-md border border-inbody-red/25 text-[10px] font-bold text-inbody-red uppercase tracking-wider shadow-sm">
+                Nueva generación
               </div>
             )}
           </div>
@@ -147,9 +149,9 @@ export default function ProfesionalModal({ profesional, ubicacion, onClose }) {
                 Equipo InBody
               </div>
               <div className="text-base font-semibold text-neutral-900 mb-1">{modelo}</div>
-              {descontinuado && (
-                <div className="inline-flex items-center px-2 py-0.5 rounded-md bg-amber-50 border border-amber-200 text-[10px] font-bold text-amber-900 uppercase tracking-wider">
-                  Modelo descontinuado
+              {nuevaGeneracion && (
+                <div className="inline-flex items-center px-2 py-0.5 rounded-md bg-inbody-red-soft border border-inbody-red/20 text-[10px] font-bold text-inbody-red uppercase tracking-wider">
+                  Nueva generación
                 </div>
               )}
             </div>

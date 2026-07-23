@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Sparkles } from 'lucide-react';
 import { getModeloImagen, getModelo } from '../config/modelos.js';
 
@@ -10,6 +10,17 @@ export default function ImagenModelo({ modeloId, size = 'md', className = '' }) 
   const [errored, setErrored] = useState(false);
   const modelo = getModelo(modeloId);
   const imagen = getModeloImagen(modeloId);
+
+  // FIX (jul 2026): al cambiar de modelo hay que resetear el estado de error.
+  // Antes, si seleccionabas un modelo sin imagen (404 → errored=true) y luego
+  // regresabas a uno CON imagen, el error se quedaba pegado y solo se veía el
+  // placeholder ("las imágenes desaparecen"). Reportado por Aza/ventas.
+  useEffect(
+    function () {
+      setErrored(false);
+    },
+    [imagen]
+  );
 
   const sizes = {
     xs: 'w-8 h-8',
