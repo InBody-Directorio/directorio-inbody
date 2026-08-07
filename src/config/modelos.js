@@ -32,7 +32,9 @@ export const MODELOS_INBODY = [
     id: 'inbody770',
     label: 'InBody770',
     descripcion: 'Equipo de uso profesional con análisis avanzado.',
-    descontinuado: false,
+    // Pedido de Aza/ventas (ago 2026): el InBody770 pasa a descontinuado.
+    // El InBody770S (versión actual) NO cambia y sigue como nueva generación.
+    descontinuado: true,
     imagen: '/modelos/inbody770.png',
   },
   {
@@ -66,6 +68,10 @@ export const MODELOS_INBODY = [
     label: 'InBody370',
     descripcion: 'Modelo intermedio para análisis profesional.',
     descontinuado: false,
+    // Pedido de Aza/ventas (ago 2026): NO aparece en el selector del registro,
+    // pero se conserva como fallback para registros existentes en BD
+    // (hay al menos un profesional aprobado con InBody370).
+    ocultoEnSelector: true,
     imagen: '/modelos/inbody370.png',
   },
 
