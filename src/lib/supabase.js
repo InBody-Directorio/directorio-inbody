@@ -16,6 +16,18 @@ function detectarEnlaceDeCorreo() {
 }
 export const llegoPorEnlaceDeCorreo = detectarEnlaceDeCorreo();
 
+// Red de seguridad (sep 2026): si un enlace de correo de Supabase aterriza en
+// cualquier página que NO sea el panel (p. ej. porque la Site URL apunta al
+// home), se redirige de inmediato a /inbody-admin conservando el token del
+// hash, para que siempre aparezca la pantalla de nueva contraseña.
+if (
+  llegoPorEnlaceDeCorreo &&
+  typeof window !== 'undefined' &&
+  window.location.pathname.indexOf('/inbody-admin') !== 0
+) {
+  window.location.replace('/inbody-admin' + window.location.search + window.location.hash);
+}
+
 if (!supabaseUrl || !supabaseAnonKey) {
   console.error('Faltan variables de entorno VITE_SUPABASE_URL o VITE_SUPABASE_ANON_KEY');
 }
