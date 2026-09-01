@@ -67,7 +67,7 @@ export default async function handler(req, res) {
 
     return res.status(200).json({
       ok: true,
-      version: 'v2-correos-1sep2026',
+      version: 'v3-reintento-1sep2026',
       mensaje: 'Supabase activo',
       fecha: new Date().toISOString(),
       conteos: {

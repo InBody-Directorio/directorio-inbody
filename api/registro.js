@@ -10,6 +10,8 @@ import { Resend } from 'resend';
 
 const TO_EMAIL_TEAM = process.env.RESEND_TO_EMAIL || 'directorioinbody@gmail.com';
 const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || 'InBody Directorio <directorio@marketinglab.mx>';
+// Las respuestas de los profesionales deben llegarle a InBody, no a la agencia
+const REPLY_TO_INBODY = process.env.RESEND_REPLY_TO || process.env.RESEND_TO_EMAIL || 'directorioinbody@gmail.com';
 
 // Colores InBody oficiales del brandbook
 const COLOR_RED = '#971B2F';
@@ -71,41 +73,84 @@ export default async function handler(req, res) {
 
     const { data: existing } = await supabaseAdmin
       .from('profesionales')
-      .select('id')
+      .select('id, status')
       .ilike('email', data.email)
       .limit(1);
 
+    // Reintento tras rechazo (sep 2026): si la solicitud previa fue RECHAZADA,
+    // el nuevo registro ACTUALIZA esa misma solicitud (datos, fotos y
+    // ubicaciones nuevas) y la regresa a "pendiente". Pendientes y aprobados
+    // siguen bloqueados como siempre.
+    let solicitudRechazadaId = null;
     if (existing && existing.length > 0) {
-      return res.status(409).json({
-        error: 'Ya existe una solicitud con este correo. Si necesitas corregir información, espera a que el equipo te contacte.',
-      });
+      if (existing[0].status === 'rechazado') {
+        solicitudRechazadaId = existing[0].id;
+      } else {
+        return res.status(409).json({
+          error: 'Ya existe una solicitud con este correo. Si necesitas corregir información, espera a que el equipo te contacte.',
+        });
+      }
     }
 
-    const { data: profesional, error: profError } = await supabaseAdmin
-      .from('profesionales')
-      .insert({
-        nombre: data.nombre,
-        especialidad: data.especialidad,
-        descripcion_breve: data.descripcion_breve || null,
-        foto_perfil_url: data.foto_perfil_url || null,
-        foto_equipo_url: data.foto_equipo_url || null,
-        email: data.email,
-        telefono: data.telefono,
-        whatsapp: data.whatsapp,
-        sitio_web: data.sitio_web || null,
-        instagram: data.instagram || null,
-        facebook: data.facebook || null,
-        modelo_inbody: data.modelo_inbody,
-        numero_serie: String(data.numero_serie).trim().toUpperCase(),
-        consentimiento_privacidad: true,
-        status: 'pendiente',
-      })
-      .select('id')
-      .single();
+    const camposProfesional = {
+      nombre: data.nombre,
+      especialidad: data.especialidad,
+      descripcion_breve: data.descripcion_breve || null,
+      foto_perfil_url: data.foto_perfil_url || null,
+      foto_equipo_url: data.foto_equipo_url || null,
+      email: data.email,
+      telefono: data.telefono,
+      whatsapp: data.whatsapp,
+      sitio_web: data.sitio_web || null,
+      instagram: data.instagram || null,
+      facebook: data.facebook || null,
+      modelo_inbody: data.modelo_inbody,
+      numero_serie: String(data.numero_serie).trim().toUpperCase(),
+      consentimiento_privacidad: true,
+      status: 'pendiente',
+    };
 
-    if (profError) {
-      console.error('Error creando profesional:', profError);
-      return res.status(500).json({ error: 'Error al crear el registro: ' + profError.message });
+    let profesional;
+    if (solicitudRechazadaId) {
+      // Reintento: actualizar la solicitud rechazada y limpiar los campos del rechazo
+      const { data: actualizado, error: updError } = await supabaseAdmin
+        .from('profesionales')
+        .update({
+          ...camposProfesional,
+          rechazado_por: null,
+          rechazado_at: null,
+          motivo_rechazo: null,
+          aprobado_por: null,
+          aprobado_at: null,
+        })
+        .eq('id', solicitudRechazadaId)
+        .select('id')
+        .single();
+      if (updError) {
+        console.error('Error actualizando solicitud rechazada:', updError);
+        return res.status(500).json({ error: 'Error al actualizar el registro: ' + updError.message });
+      }
+      profesional = actualizado;
+      // Borrar las ubicaciones anteriores; abajo se insertan las nuevas
+      const { error: delUbicError } = await supabaseAdmin
+        .from('ubicaciones')
+        .delete()
+        .eq('profesional_id', solicitudRechazadaId);
+      if (delUbicError) {
+        console.error('Error limpiando ubicaciones previas:', delUbicError);
+        return res.status(500).json({ error: 'Error al actualizar ubicaciones: ' + delUbicError.message });
+      }
+    } else {
+      const { data: creado, error: profError } = await supabaseAdmin
+        .from('profesionales')
+        .insert(camposProfesional)
+        .select('id')
+        .single();
+      if (profError) {
+        console.error('Error creando profesional:', profError);
+        return res.status(500).json({ error: 'Error al crear el registro: ' + profError.message });
+      }
+      profesional = creado;
     }
 
     const ubicacionesPayload = data.ubicaciones.map(function (u, idx) {
@@ -128,7 +173,9 @@ export default async function handler(req, res) {
 
     if (ubicError) {
       console.error('Error creando ubicaciones:', ubicError);
-      await supabaseAdmin.from('profesionales').delete().eq('id', profesional.id);
+      if (!solicitudRechazadaId) {
+        await supabaseAdmin.from('profesionales').delete().eq('id', profesional.id);
+      }
       return res.status(500).json({ error: 'Error al guardar ubicaciones: ' + ubicError.message });
     }
 
@@ -149,11 +196,12 @@ export default async function handler(req, res) {
         correos.equipo = await enviarCorreoSeguro(resend, 'equipo', {
           from: FROM_EMAIL,
           to: TO_EMAIL_TEAM,
-          subject: `Nueva solicitud: ${data.nombre} · Directorio InBody`,
+          subject: solicitudRechazadaId ? `Solicitud corregida (reintento): ${data.nombre} · Directorio InBody` : `Nueva solicitud: ${data.nombre} · Directorio InBody`,
           html: renderTeamEmail({ ...data, admin_url: adminUrl, profesional_id: profesional.id }),
         });
         correos.profesional = await enviarCorreoSeguro(resend, 'profesional', {
           from: FROM_EMAIL,
+          replyTo: REPLY_TO_INBODY,
           to: data.email,
           subject: 'Recibimos tu solicitud · Directorio InBody México',
           html: renderDoctorEmail(data),

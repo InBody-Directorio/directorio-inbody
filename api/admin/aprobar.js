@@ -6,6 +6,8 @@ import { createClient } from '@supabase/supabase-js';
 import { Resend } from 'resend';
 
 const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || 'InBody Directorio <directorio@marketinglab.mx>';
+// Las respuestas de los profesionales deben llegarle a InBody, no a la agencia
+const REPLY_TO_INBODY = process.env.RESEND_REPLY_TO || process.env.RESEND_TO_EMAIL || 'directorioinbody@gmail.com';
 
 const COLOR_RED = '#971B2F';
 const COLOR_BLACK = '#101820';
@@ -81,6 +83,7 @@ export default async function handler(req, res) {
 async function sendApprovalEmail(prof) {
   const resend = new Resend(process.env.RESEND_API_KEY);
   return resend.emails.send({
+    replyTo: REPLY_TO_INBODY,
     from: FROM_EMAIL,
     to: prof.email,
     subject: '¡Estás dentro! · Directorio InBody México',
