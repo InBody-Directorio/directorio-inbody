@@ -1,15 +1,16 @@
 import { useState } from 'react';
-import { Loader2, AlertCircle, Mail, Lock, ArrowRight, KeyRound } from 'lucide-react';
+import { Loader2, AlertCircle, Lock, ArrowRight } from 'lucide-react';
 import { supabase } from '../../lib/supabase.js';
 import InBodyLogo from '../InBodyLogo.jsx';
 
 export default function LoginScreen() {
-  const [mode, setMode] = useState('password'); // password | magic
+  // Sep 2026: se quitó el "enlace mágico" del login. La recuperación de
+  // contraseña la manda un administrador desde Supabase (Authentication →
+  // Users → Send password recovery) y el enlace abre NuevaPasswordScreen.
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [magicSent, setMagicSent] = useState(false);
 
   async function handlePasswordLogin(e) {
     e.preventDefault();
@@ -29,24 +30,6 @@ export default function LoginScreen() {
     }
   }
 
-  async function handleMagicLink(e) {
-    e.preventDefault();
-    setLoading(true);
-    setError('');
-    try {
-      const { error: err } = await supabase.auth.signInWithOtp({
-        email: email.trim().toLowerCase(),
-        options: { emailRedirectTo: window.location.origin + '/inbody-admin' },
-      });
-      if (err) throw err;
-      setMagicSent(true);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  }
-
   return (
     <div className="min-h-screen bg-neutral-50 flex items-center justify-center px-4 py-8">
       <div className="max-w-md w-full">
@@ -56,31 +39,10 @@ export default function LoginScreen() {
         </div>
 
         <div className="bg-white border border-neutral-200 rounded-3xl p-6 md:p-8 shadow-sm">
-          {magicSent ? (
-            <div className="text-center py-4">
-              <Mail className="w-10 h-10 text-inbody-red mx-auto mb-3" />
-              <h2 className="font-display text-xl font-medium text-neutral-900 mb-2">Revisa tu correo</h2>
-              <p className="text-sm text-neutral-500 leading-relaxed mb-4">
-                Te mandamos un enlace mágico a <strong>{email}</strong>. Dale clic para iniciar sesión.
-              </p>
-              <button
-                type="button"
-                onClick={function () { setMagicSent(false); setMode('password'); }}
-                className="text-xs text-inbody-red hover:underline"
-              >
-                Volver al login
-              </button>
-            </div>
-          ) : (
-            <>
-              <h2 className="font-display text-xl font-medium text-neutral-900 mb-1">
-                {mode === 'password' ? 'Iniciar sesión' : 'Recuperar acceso'}
-              </h2>
-              <p className="text-xs text-neutral-500 mb-5">
-                {mode === 'password' ? 'Acceso solo para administradores autorizados.' : 'Te mandaremos un enlace mágico al correo.'}
-              </p>
+              <h2 className="font-display text-xl font-medium text-neutral-900 mb-1">Iniciar sesión</h2>
+              <p className="text-xs text-neutral-500 mb-5">Acceso solo para administradores autorizados.</p>
 
-              <form onSubmit={mode === 'password' ? handlePasswordLogin : handleMagicLink} className="space-y-3">
+              <form onSubmit={handlePasswordLogin} className="space-y-3">
                 <div>
                   <label className="block text-xs font-medium text-neutral-700 mb-1.5">Correo</label>
                   <input
@@ -94,20 +56,18 @@ export default function LoginScreen() {
                   />
                 </div>
 
-                {mode === 'password' && (
-                  <div>
-                    <label className="block text-xs font-medium text-neutral-700 mb-1.5">Contraseña</label>
-                    <input
-                      type="password"
-                      value={password}
-                      onChange={function (e) { setPassword(e.target.value); }}
-                      placeholder="••••••••"
-                      autoComplete="current-password"
-                      className="w-full px-3.5 py-2.5 bg-white border border-neutral-200 focus:border-inbody-red/40 focus:ring-2 focus:ring-inbody-red/20 rounded-xl text-sm transition-all outline-none"
-                      required
-                    />
-                  </div>
-                )}
+                <div>
+                  <label className="block text-xs font-medium text-neutral-700 mb-1.5">Contraseña</label>
+                  <input
+                    type="password"
+                    value={password}
+                    onChange={function (e) { setPassword(e.target.value); }}
+                    placeholder="••••••••"
+                    autoComplete="current-password"
+                    className="w-full px-3.5 py-2.5 bg-white border border-neutral-200 focus:border-inbody-red/40 focus:ring-2 focus:ring-inbody-red/20 rounded-xl text-sm transition-all outline-none"
+                    required
+                  />
+                </div>
 
                 {error && (
                   <div className="p-3 bg-inbody-red-soft border border-inbody-red/20 rounded-xl flex items-start gap-2">
@@ -118,30 +78,22 @@ export default function LoginScreen() {
 
                 <button
                   type="submit"
-                  disabled={loading || !email || (mode === 'password' && !password)}
+                  disabled={loading || !email || !password}
                   className="w-full flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-inbody-red hover:bg-inbody-red-hover text-white text-sm font-semibold transition-all disabled:opacity-60"
                 >
                   {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : (
                     <>
-                      {mode === 'password' ? <Lock className="w-3.5 h-3.5" /> : <KeyRound className="w-3.5 h-3.5" />}
-                      {mode === 'password' ? 'Entrar' : 'Enviar enlace mágico'}
+                      <Lock className="w-3.5 h-3.5" />
+                      Entrar
                       <ArrowRight className="w-3.5 h-3.5" />
                     </>
                   )}
                 </button>
               </form>
 
-              <div className="mt-4 text-center">
-                <button
-                  type="button"
-                  onClick={function () { setMode(mode === 'password' ? 'magic' : 'password'); setError(''); }}
-                  className="text-[11px] text-neutral-500 hover:text-inbody-red transition-colors"
-                >
-                  {mode === 'password' ? '¿Olvidaste tu contraseña? Usar enlace mágico' : 'Volver a contraseña'}
-                </button>
+              <div className="mt-4 text-center text-[11px] text-neutral-500">
+                ¿Olvidaste tu contraseña? Pide a un administrador que te envíe el enlace de recuperación.
               </div>
-            </>
-          )}
         </div>
 
         <div className="text-center mt-6 text-[11px] text-neutral-400">

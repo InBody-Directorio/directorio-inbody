@@ -58,7 +58,9 @@ export default async function handler(req, res) {
 
     if (updErr) return res.status(500).json({ error: updErr.message });
 
-    Promise.race([
+    // FIX (sep 2026): se ESPERA el correo antes de responder (antes se perdía
+    // cuando Vercel congelaba la función al responder).
+    await Promise.race([
       sendRejectionEmail(prof, motivo),
       new Promise(function (_, reject) { setTimeout(reject, 9000); }),
     ]).catch(function (err) { console.error('Error/timeout correo rechazo:', err); });

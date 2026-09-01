@@ -138,27 +138,31 @@ export default async function handler(req, res) {
     const protocol = req.headers['x-forwarded-proto'] || 'https';
     const adminUrl = `${protocol}://${host}/inbody-admin/pendientes`;
 
-    Promise.race([
-      Promise.all([
-        resend.emails.send({
+    // FIX (sep 2026): los correos se ESPERAN antes de responder.
+    // Antes se disparaban "en segundo plano" y Vercel congela la función al
+    // responder, así que a veces salían y a veces no. Ahora se envían uno
+    // tras otro (Resend limita a 2 peticiones por segundo) con tope de 8s
+    // en total, y el resultado de cada uno queda en los logs de Vercel.
+    const correos = { equipo: 'pendiente', profesional: 'pendiente' };
+    await Promise.race([
+      (async function () {
+        correos.equipo = await enviarCorreoSeguro(resend, 'equipo', {
           from: FROM_EMAIL,
           to: TO_EMAIL_TEAM,
           subject: `Nueva solicitud: ${data.nombre} · Directorio InBody`,
           html: renderTeamEmail({ ...data, admin_url: adminUrl, profesional_id: profesional.id }),
-        }),
-        resend.emails.send({
+        });
+        correos.profesional = await enviarCorreoSeguro(resend, 'profesional', {
           from: FROM_EMAIL,
           to: data.email,
           subject: 'Recibimos tu solicitud · Directorio InBody México',
           html: renderDoctorEmail(data),
-        }),
-      ]),
-      new Promise(function (_, reject) { setTimeout(reject, 9000); }),
-    ]).catch(function (err) {
-      console.error('Error/timeout enviando correos:', err);
-    });
+        });
+      })(),
+      new Promise(function (resolve) { setTimeout(resolve, 8000); }),
+    ]);
 
-    return res.status(200).json({ ok: true, id: profesional.id });
+    return res.status(200).json({ ok: true, id: profesional.id, correos: correos });
   } catch (err) {
     console.error('Error en /api/registro:', err);
     return res.status(500).json({ error: err.message || 'Error interno' });
@@ -301,4 +305,23 @@ function formatPhone(phone) {
   if (clean.length === 10) return '+52 ' + clean.slice(0,2) + ' ' + clean.slice(2,6) + ' ' + clean.slice(6);
   if (clean.length === 12 && clean.startsWith('52')) return '+52 ' + clean.slice(2,4) + ' ' + clean.slice(4,8) + ' ' + clean.slice(8);
   return phone;
+}
+
+/**
+ * Envía un correo con Resend y NUNCA lanza excepción: devuelve 'ok' o el error
+ * en texto, y lo deja en los logs de Vercel para poder diagnosticar.
+ */
+async function enviarCorreoSeguro(resendClient, etiqueta, payload) {
+  try {
+    const { data, error } = await resendClient.emails.send(payload);
+    if (error) {
+      console.error(`[correo ${etiqueta}] Resend rechazó el envío:`, error);
+      return 'error: ' + (error.message || JSON.stringify(error));
+    }
+    console.log(`[correo ${etiqueta}] enviado a ${payload.to}, id ${data && data.id}`);
+    return 'ok';
+  } catch (err) {
+    console.error(`[correo ${etiqueta}] excepción:`, err);
+    return 'error: ' + (err.message || String(err));
+  }
 }
