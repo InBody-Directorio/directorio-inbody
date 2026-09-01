@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { supabase } from '../lib/supabase.js';
+import { supabase, llegoPorEnlaceDeCorreo } from '../lib/supabase.js';
 
 /**
  * Hook que maneja autenticación admin.
@@ -12,6 +12,9 @@ export function useAdminAuth() {
   const [user, setUser] = useState(null);
   const [admin, setAdmin] = useState(null);
   const [loading, setLoading] = useState(true);
+  // FIX (sep 2026): true cuando el usuario entró por enlace de correo (recuperar
+  // contraseña / enlace mágico). El panel muestra la pantalla de nueva contraseña.
+  const [modoNuevaPassword, setModoNuevaPassword] = useState(llegoPorEnlaceDeCorreo);
   const initialized = useRef(false);
 
   useEffect(function () {
@@ -77,6 +80,11 @@ export function useAdminAuth() {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(function (event, session) {
       if (!mounted) return;
+      // Este evento puede llegar antes del init; se atiende siempre.
+      if (event === 'PASSWORD_RECOVERY') {
+        setModoNuevaPassword(true);
+        return;
+      }
       if (!initialized.current) return;
 
       if (event === 'SIGNED_OUT') {
@@ -100,6 +108,10 @@ export function useAdminAuth() {
     setAdmin(null);
   }
 
+  function terminarNuevaPassword() {
+    setModoNuevaPassword(false);
+  }
+
   return {
     user: user,
     admin: admin,
@@ -107,5 +119,7 @@ export function useAdminAuth() {
     isLoggedIn: !!user && !!admin,
     isSuperAdmin: admin && admin.nivel === 'super_admin',
     logout: logout,
+    modoNuevaPassword: modoNuevaPassword,
+    terminarNuevaPassword: terminarNuevaPassword,
   };
 }

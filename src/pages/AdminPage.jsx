@@ -4,6 +4,7 @@ import { Loader2, RefreshCw, Download } from 'lucide-react';
 import { useAdminAuth } from '../hooks/useAdminAuth.js';
 import { useProfesionalesAdmin, useCountPendientes } from '../hooks/useProfesionalesAdmin.js';
 import LoginScreen from '../components/admin/LoginScreen.jsx';
+import NuevaPasswordScreen from '../components/admin/NuevaPasswordScreen.jsx';
 import AdminSidebar from '../components/admin/AdminSidebar.jsx';
 import ProfesionalesList from '../components/admin/ProfesionalesList.jsx';
 import ProfesionalDetailModal from '../components/admin/ProfesionalDetailModal.jsx';
@@ -26,6 +27,12 @@ export default function AdminPage() {
 
   if (!auth.isLoggedIn) {
     return <LoginScreen />;
+  }
+
+  // FIX (sep 2026): si llegó por enlace de correo (recuperar contraseña /
+  // enlace mágico), primero se le pide definir su contraseña nueva.
+  if (auth.modoNuevaPassword) {
+    return <NuevaPasswordScreen email={auth.user && auth.user.email} onListo={auth.terminarNuevaPassword} />;
   }
 
   return <AdminApp auth={auth} />;
