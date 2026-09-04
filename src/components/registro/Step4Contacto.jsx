@@ -87,7 +87,7 @@ export default function Step4Contacto({ formData, updateField, errors }) {
           onChange={function (v) { updateField('consentimiento_privacidad', v); }}
           error={errors.consentimiento_privacidad}
         >
-          Acepto el aviso de privacidad y autorizo que InBody México use mi información para verificar mi registro y publicar mi perfil en el directorio oficial.
+          Acepto el <a href="https://www.inbodymexico.com/aviso-de-privacidad/" target="_blank" rel="noopener noreferrer" className="underline hover:text-inbody-red transition-colors" onClick={function (e) { e.stopPropagation(); }}>aviso de privacidad</a> y autorizo que InBody México use mi información para verificar mi registro y publicar mi perfil en el directorio oficial.
         </Checkbox>
         {errors.consentimiento_privacidad && (
           <div className="mt-1 text-[11px] text-inbody-red">{errors.consentimiento_privacidad}</div>

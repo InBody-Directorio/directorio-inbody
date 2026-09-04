@@ -109,7 +109,7 @@ function renderApprovedEmail(prof) {
     Tus futuros pacientes ya pueden encontrarte filtrando por tu categoría y ubicación. Cuando alguien dé clic en tu perfil, podrá contactarte directo por WhatsApp.
   </p>
   <div style="text-align:center;margin:32px 0;">
-    <a href="https://www.inbodymexico.com" style="display:inline-block;background:${COLOR_RED};color:white;font-size:14px;font-weight:600;padding:14px 28px;border-radius:99px;text-decoration:none;">Ver el directorio</a>
+    <a href="https://directorio.inbodymexico.com" style="display:inline-block;background:${COLOR_RED};color:white;font-size:14px;font-weight:600;padding:14px 28px;border-radius:99px;text-decoration:none;">Ver el directorio</a>
   </div>
   <div style="background:${COLOR_BG};border-radius:12px;padding:20px;margin-bottom:24px;border-left:3px solid ${COLOR_GREEN};">
     <div style="font-size:11px;font-weight:600;color:${COLOR_GREEN};letter-spacing:0.12em;text-transform:uppercase;margin-bottom:6px;">¿Necesitas cambiar algo?</div>

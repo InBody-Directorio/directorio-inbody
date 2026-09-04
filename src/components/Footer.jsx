@@ -14,9 +14,9 @@ export default function Footer() {
               El directorio oficial de profesionales certificados con equipo InBody en México. Encuentra mediciones precisas de composición corporal cerca de ti.
             </p>
             <div className="flex items-center gap-3">
-              <SocialLink href="https://www.instagram.com/inbodymexico/" icon={<Instagram className="w-4 h-4" />} label="Instagram" />
-              <SocialLink href="https://www.facebook.com/InBodyMexico" icon={<Facebook className="w-4 h-4" />} label="Facebook" />
-              <SocialLink href="https://www.youtube.com/@inbodymexico" icon={<Youtube className="w-4 h-4" />} label="YouTube" />
+              <SocialLink href="https://www.instagram.com/inbodymx/" icon={<Instagram className="w-4 h-4" />} label="Instagram" />
+              <SocialLink href="https://www.facebook.com/InBodyEnMexico/" icon={<Facebook className="w-4 h-4" />} label="Facebook" />
+              <SocialLink href="https://www.youtube.com/@InBodyMX" icon={<Youtube className="w-4 h-4" />} label="YouTube" />
               <SocialLink href="https://www.inbodymexico.com" icon={<Globe className="w-4 h-4" />} label="Sitio web" />
             </div>
           </div>
@@ -38,15 +38,15 @@ export default function Footer() {
             </div>
             <ul className="space-y-2.5 text-sm text-neutral-400">
               <li>
-                <a href="mailto:contacto@inbodymexico.com" className="hover:text-white transition-colors flex items-center gap-2">
+                <a href="mailto:info.mx@inbody.com" className="hover:text-white transition-colors flex items-center gap-2">
                   <Mail className="w-3.5 h-3.5" />
-                  contacto@inbodymexico.com
+                  info.mx@inbody.com
                 </a>
               </li>
               <li>
-                <a href="tel:+525555555555" className="hover:text-white transition-colors flex items-center gap-2">
+                <a href="tel:+525550250147" className="hover:text-white transition-colors flex items-center gap-2">
                   <Phone className="w-3.5 h-3.5" />
-                  +52 55 5555 5555
+                  55 5025 0147
                 </a>
               </li>
             </ul>
@@ -58,8 +58,7 @@ export default function Footer() {
             © {year} InBody México. Todos los derechos reservados.
           </div>
           <div className="flex items-center gap-5 text-xs text-neutral-500">
-            <a href="#" className="hover:text-white transition-colors">Aviso de privacidad</a>
-            <a href="#" className="hover:text-white transition-colors">Términos y condiciones</a>
+            <a href="https://www.inbodymexico.com/aviso-de-privacidad/" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Aviso de privacidad</a>
           </div>
         </div>
 
